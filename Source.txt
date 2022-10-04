@@ -1,0 +1,9 @@
+Pin
+Pin
+Add
+Push 28
+Pin
+Mul
+Add
+Out
+Hlt
