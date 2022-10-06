@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include "Stack/Stack.h"
 
-// #define NDUMP
-
 #ifndef  NDUMP
 
 #define SimpleStackDump( stack_ptr, cmd )            \
@@ -24,26 +22,26 @@
 
 void FullDump(int* code, int code_size, int ip, Stack* stack)
 {
-    fprintf(stderr, "\n\\\\=========");
+    fprintf(stderr, "  \\\\=========");
 
     for(int i = 0; i < code_size; i++)
         fprintf(stderr, "===");
 
-    fprintf(stderr, "\\\\\n  ip:   ");
+    fprintf(stderr, "\\\\\n    ip:   ");
 
     for (int i = 0; i < code_size; i++)
     {
         fprintf(stderr, "%02d ", i);
     }
 
-    fprintf(stderr, "\n  code: ");
+    fprintf(stderr, "\n    code: ");
 
     for (int i = 0; i < code_size; i++)
     {
         fprintf(stderr, "%02d ", code[i]);
     }
 
-    fprintf(stderr, "\n  ------");
+    fprintf(stderr, "\n    ------");
 
     for(int i = 0; i < ip; i++)
         fprintf(stderr, "---");
@@ -52,12 +50,12 @@ void FullDump(int* code, int code_size, int ip, Stack* stack)
 
     SimpleStackDump_(stack);
 
-    fprintf(stderr, "\\\\=========");
+    fprintf(stderr, "  \\\\=========");
 
     for(int i = 0; i < code_size; i++)
         fprintf(stderr, "===");
 
-    fprintf(stderr, "\\\\\n");
+    fprintf(stderr, "\\\\\n\n");
 }
 
 #endif

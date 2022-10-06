@@ -2,15 +2,41 @@
 #include "Constants.h"
 #include <stdio.h>
 #include <string.h>
+
 #include "Stack/Stack.h"
+#define NDUMP
+
 #include "DumpGraphics.h"
 #include "TechInfo.h"
+#include "CheckFile.h"
 
-#undef  FILENAME_INPUT
-#define FILENAME_INPUT "output.asm"
+#undef FILENAME_INPUT
+#undef FILENAME_INPUT_DEFAULT
 
-int main()
+const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
+const char* FILENAME_INPUT            = nullptr;
+
+int main(int argc, char** argv)
 {
+    if (argc == 2)
+    {
+        if (CheckFile(argv[1]))
+            FILENAME_INPUT = argv[1];
+
+        else
+        {
+            fprintf(stderr,
+                    "\n  \"cpu\":\n"
+                    "  NO FILE \"%s\" IN THIS DIRECTORY\n\n", argv[1]);
+            exit(1);
+        }
+    }
+
+    else
+    {
+        FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
+    }
+
     FILE* file = fopen(FILENAME_INPUT, "rb");
     ASSERT(file != NULL);
 
@@ -87,7 +113,7 @@ int main()
                 {
                     int popped = StackPop(&stk);
                     SimpleStackDump(&stk, "Out");
-                    fprintf(stderr, "  OUTPUT: %d\n", popped);
+                    fprintf(stderr, "  Output: %d\n\n", popped);
 
                     break;
                 }
@@ -96,7 +122,7 @@ int main()
                 {
                     int num = 0;
 
-                    fprintf(stderr, "Type a number, it'll be used in calculatings: ");
+                    fprintf(stderr, "  Type a number, it'll be used in calculatings: ");
                     scanf("%d", &num);
 
                     StackPush(&stk, num);
@@ -108,7 +134,7 @@ int main()
                 case CMD_HLT:
                 {
                     StackDtor(&stk);
-                    fprintf(stderr, "\n  Program \"%s\" has finished correctly\n", FILENAME_INPUT);
+                    fprintf(stderr, "  Program \"%s\" has finished correctly\n", FILENAME_INPUT);
                     exit(1);
 
                     break;
@@ -123,7 +149,7 @@ int main()
 
                 default:
                 {
-                    fprintf(stderr, "NO SUCH COMMAND WITH CODE %d\n", code[ip]);
+                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", code[ip], FILENAME_INPUT);
                     exit(1);
                 }
             }
@@ -138,7 +164,7 @@ int main()
 
     else if (tech_info.filecode != CP_FILECODE)
     {
-        fprintf(stderr, "WRONG TYPE OF ASM FILE!!!\nYOU HAVE TO USE CP_FILECODE \"%d\"\n", CP_FILECODE);
+        fprintf(stderr, "  WRONG TYPE OF ASM FILE!!!\n  YOU HAVE TO USE CP_FILECODE \"%d\"\n", CP_FILECODE);
         // free(tech_info);
         fclose(file);
         exit(1);
@@ -146,7 +172,7 @@ int main()
 
     else if (tech_info.version != CMD_VERSION)
     {
-        fprintf(stderr, "USED OLD (\"%d\") VERSION OF COMMANDS!!!\nYOU HAVE TO USE THE \"%d\" VERSION!!!\n",
+        fprintf(stderr, "  USED OLD (\"%d\") VERSION OF COMMANDS!!!\n  YOU HAVE TO USE THE \"%d\" VERSION!!!\n",
                 tech_info.version, CMD_VERSION);
         // free(tech_info);
         fclose(file);

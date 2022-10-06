@@ -5,22 +5,36 @@
 #include "Onegin/defines.h"
 #include "Onegin/functions.h"
 #include "TechInfo.h"
+#include "CheckFile.h"
 
 #undef  FILENAME_INPUT
 #undef  FILENAME_OUTPUT
 #undef  FILENAME_INPUT_DEFAULT
 
-const char  FILENAME_OUTPUT[]        = "output.asm";
-const char  FILENAME_INPUT_DEFAULT[] = "Source_default";
-const char* FILENAME_INPUT           = nullptr;
+const char  FILENAME_INPUT_DEFAULT[]  = "Source_default.txt";
+const char* FILENAME_INPUT            = nullptr;
+const char  FILENAME_OUTPUT[]         = "Source_output.asm";
 
 int main(int argc, char** argv)
 {
     if (argc == 2)
-        FILENAME_INPUT = argv[1];
+    {
+        if (CheckFile(argv[1]))
+            FILENAME_INPUT = argv[1];
+
+        else
+        {
+            fprintf(stderr,
+                    "\n  \"asm\":\n"
+                    "  NO FILE \"%s\" IN THIS DIRECTORY\n\n", argv[1]);
+            exit(1);
+        }
+    }
 
     else
+    {
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
+    }
 
     char** text = nullptr;
     char*  data = nullptr;
@@ -41,21 +55,27 @@ int main(int argc, char** argv)
 
     int line  = 0;
     int i     = 0;
-    int count = 0;
+
+    TechInfo tech_info = {
+                          CP_FILECODE,
+                          CMD_VERSION,
+                          0
+                         };
 
     while (line < text_lines_amount)
     {
         char* cmd = (char*) calloc(strlen(text[line]), sizeof(char));
         ASSERT(cmd != NULL);
 
-        sscanf(text[line], " %s", cmd);
+        int val = 0;
+        sscanf(text[line], " %s %d", cmd, &val);
 
         if (strcasecmp(cmd, "push") == 0)
         {
-            int val = 0;
-            sscanf(text[line] + 4, "%d", &val);
+            // int val = 0;
+            // sscanf(text[line] + 4, "%d", &val);
             code[i++] = CMD_PUSH;
-            count++;
+            tech_info.code_size++;
             code[i++] = val;
         }
 
@@ -85,26 +105,28 @@ int main(int argc, char** argv)
 
         else
         {
-            fprintf(stderr, "NO COMMAND CALLED \"%s\"!!!\n", cmd);
+            fprintf(stderr, "\n  \"asm\":\n"
+                            "    THERE IS NO COMMAND CALLED \"%s\" IN \"%d\" VERSION!!!\n"
+                            "    COMPILED FILE WILL BE DAMAGED!!!\n\n", cmd, CMD_VERSION);
+
+            tech_info.version = WRNG_CMD_VERSION;
+
+            fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
+
             exit(1);
         }
 
-        count++;
+        tech_info.code_size++;
         free(cmd);
         line++;
     }
 
-    TechInfo tech_info = {
-                          CP_FILECODE,
-                          CMD_VERSION,
-                          count
-                         };
     // tech_info[0] = CP_FILECODE;
     // tech_info[1] = CMD_VERSION;
     // tech_info[2] = count;
 
     fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
-    fwrite((const void*) code, sizeof(int), count, file_out);
+    fwrite((const void*) code, sizeof(int), tech_info.code_size, file_out);
 
     fclose(file_out);
     free(text);
@@ -113,4 +135,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
