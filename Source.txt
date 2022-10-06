@@ -1,5 +1,9 @@
 Push 2
 Push 5
+Push 10
+Push2
+Mul
+Dump
 Mul
 Out
 Hlt
