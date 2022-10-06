@@ -1,5 +1,0 @@
-Push 2
-Push 5
-Mul
-Out
-Hlt
