@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "Stack/Stack.h"
-#define NDUMP
+// #define NDUMP
 
 #include "DumpGraphics.h"
 #include "TechInfo.h"
