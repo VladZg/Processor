@@ -1,9 +1,5 @@
-Pin
-Pin
-Add
-Push 28
-Pin
+Push 2
+Push 5
 Mul
-Add
 Out
 Hlt
