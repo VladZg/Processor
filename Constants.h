@@ -11,6 +11,7 @@ enum {
       CMD_OUT          = 6,
       CMD_DUMP         = 7,
       CMD_PIN          = 8,
+      CMD_POP          = 9,
 
       WRNG_CMD         = -1,
       WRNG_CMD_VERSION = -1,

@@ -22,24 +22,8 @@ const char  FILENAME_OUTPUT[]         = "Source_output_disasmed.txt";
 
 int main(int argc, char** argv)
 {
-    if (argc == 2)
-    {
-        if (CheckFile(argv[1]))
-            FILENAME_INPUT = argv[1];
-
-        else
-        {
-            fprintf(stderr,
-                    "\n  \"disasm\":\n"
-                    "    NO FILE \"%s\" IN THIS DIRECTORY\n\n", argv[1]);
-            exit(1);
-        }
-    }
-
-    else
-    {
+    if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
-    }
 
     FILE* file_inp = fopen(FILENAME_INPUT, "rb");
     ASSERT(file_inp != NULL);
@@ -69,6 +53,14 @@ int main(int argc, char** argv)
                     ip++;
                     fprintf(file_out, "Push %d\n", *(int*)(code + ip));
                     ip += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_POP:
+                {
+                    fprintf(file_out, "Pop\n");
+                    ip++;
 
                     break;
                 }
@@ -145,9 +137,7 @@ int main(int argc, char** argv)
 
     else if (tech_info.filecode != CP_FILECODE)
     {
-        fprintf(stderr,
-                        "\n  \"disasm\":\n"
-                        "    WRONG TYPE OF ASM FILE!!!\n"
+        fprintf(stderr, "    WRONG TYPE OF ASM FILE!!!\n"
                         "    YOU HAVE TO USE CP_FILECODE \"%d\"\n\n", CP_FILECODE);
         fclose(file_inp);
         exit(1);
@@ -155,9 +145,7 @@ int main(int argc, char** argv)
 
     else if (tech_info.version != CMD_VERSION)
     {
-        fprintf(stderr,
-                        "\n  \"disasm\":\n"
-                        "    USED OLD (\"%d\") VERSION OF COMMANDS!!!\n"
+        fprintf(stderr, "    USED OLD (\"%d\") VERSION OF COMMANDS!!!\n"
                         "    YOU HAVE TO USE THE \"%d\" VERSION!!!\n\n",
                 tech_info.version, CMD_VERSION);
         fclose(file_inp);

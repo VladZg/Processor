@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-size_t CheckFile(const char* filename)
+size_t IsFileExist(const char* filename)
 {
     FILE* file = fopen(filename, "rb+");
 
@@ -14,6 +14,28 @@ size_t CheckFile(const char* filename)
     }
 
     return 0;
+}
+
+size_t CheckFile(int argc, char** argv, const char** filename_input)
+{
+    if (argc == 2)
+    {
+        if (IsFileExist(argv[1]))
+        {
+            *filename_input = argv[1];
+
+            return 1;
+        }
+
+        else
+        {
+            fprintf(stderr, "  NO FILE \"%s\" IN THIS DIRECTORY\n\n", argv[1]);
+
+            exit(1);
+        }
+    }
+
+    else return 0;
 }
 
 #endif

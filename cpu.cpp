@@ -4,7 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "Stack/Stack.h"
-// #define NDUMP
+
+#define NDUMP
+
 #include "DumpGraphics.h"
 #include "TechInfo.h"
 #include "CheckFile.h"
@@ -42,24 +44,8 @@ void FullDump   (Cpu* cpu);
 
 int main(int argc, char** argv)
 {
-    if (argc == 2)
-    {
-        if (CheckFile(argv[1]))
-            FILENAME_INPUT = argv[1];
-
-        else
-        {
-            fprintf(stderr,
-                    "\n  \"cpu\":\n"
-                    "  NO FILE \"%s\" IN THIS DIRECTORY\n\n", argv[1]);
-            exit(1);
-        }
-    }
-
-    else
-    {
+    if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
-    }
 
     FILE* file = fopen(FILENAME_INPUT, "rb");
     ASSERT(file != NULL);
@@ -82,6 +68,15 @@ int main(int argc, char** argv)
                     StackPush(&cpu.stack, *(int*)(cpu.code + cpu.ip));
                     SimpleStackDump(&cpu.stack, "Push");
                     cpu.ip += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_POP:
+                {
+                    StackPop(&cpu.stack);
+                    SimpleStackDump(&cpu.stack, "Pop");
+                    cpu.ip++;
 
                     break;
                 }

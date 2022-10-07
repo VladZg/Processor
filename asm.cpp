@@ -15,37 +15,21 @@ const char  FILENAME_INPUT_DEFAULT[]  = "Source_default.txt";
 const char* FILENAME_INPUT            = nullptr;
 const char  FILENAME_OUTPUT[]         = "Source_output.asm";
 
-struct Cmd {
-            unsigned short unused : 1;
-            unsigned short mem    : 1;
-            unsigned short reg    : 1;
-            unsigned short immed  : 1;
-            unsigned short code   : 2;
-            int o;
-            };
+// struct Cmd {
+//             unsigned short unused : 1;
+//             unsigned short mem    : 1;
+//             unsigned short reg    : 1;
+//             unsigned short immed  : 1;
+//             unsigned short code   : 4;
+//             };
 
+char GetArg(char* line);
 void CompilationError(size_t err_code, size_t line);
 
 int main(int argc, char** argv)
 {
-    if (argc == 2)
-    {
-        if (CheckFile(argv[1]))
-            FILENAME_INPUT = argv[1];
-
-        else
-        {
-            fprintf(stderr,
-                    "\n  \"asm\":\n"
-                    "  NO FILE \"%s\" IN THIS DIRECTORY\n\n", argv[1]);
-            exit(1);
-        }
-    }
-
-    else
-    {
+    if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
-    }
 
     char** text = nullptr;
     char*  data = nullptr;
@@ -77,12 +61,17 @@ int main(int argc, char** argv)
 
         if (strcasecmp(cmd, "push") == 0)
         {
-            Cmd cmd = {};
+            // Cmd cmd = {};
 
             code[ip++] = CMD_PUSH;
             *(int*)(code + ip) = val;
             ip += sizeof(int);
             tech_info.code_size += sizeof(int);
+        }
+
+        else if (strcasecmp(cmd, "pop") == 0)
+        {
+            code[ip++] = CMD_POP;
         }
 
         else if (strcasecmp(cmd, "add") == 0)
@@ -111,8 +100,7 @@ int main(int argc, char** argv)
 
         else
         {
-            fprintf(stderr, "\n  \"asm\":\n"
-                            "    THERE IS NO COMMAND CALLED \"%s\" IN \"%d\" VERSION!!!\n"
+            fprintf(stderr, "    THERE IS NO COMMAND CALLED \"%s\" IN \"%d\" VERSION!!!\n"
                             "    COMPILED FILE WILL BE DAMAGED!!!\n\n", cmd, CMD_VERSION);
 
             tech_info.version = WRNG_CMD_VERSION;
