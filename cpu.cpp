@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <cstdint>
 #include "Stack/Stack.h"
 // #define NDUMP
 
@@ -16,19 +17,22 @@
 const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
 
-struct CPU
+struct Cpu
 {
     char*  code;
     int    code_size;
     size_t ip;
+
     int*   RAM;
     Stack  stack;
+
+    int*   regs;
 };
 
-int* GetArg(CPU* cpu);
+int* GetArg(Cpu* cpu);
 int  GetRAM(int* RAM);
-void CpuCtor(CPU* cpu, int code_size, FILE* file);
-void CpuCleaner(CPU* cpu);
+void CpuCtor(Cpu* cpu, int code_size, FILE* file);
+void CpuCleaner(Cpu* cpu);
 
 
 int main(int argc, char** argv)
@@ -56,12 +60,11 @@ int main(int argc, char** argv)
     ASSERT(file != NULL);
 
     TechInfo tech_info = {};
-
     fread(&tech_info, sizeof(int), TECH_INFO_SIZE, file);
 
     if ((tech_info.filecode == CP_FILECODE) && (tech_info.version == CMD_VERSION))
     {
-        CPU cpu = {};
+        Cpu cpu = {};
         CpuCtor(&cpu, tech_info.code_size, file);
 
         while (cpu.ip < cpu.code_size)
@@ -200,7 +203,7 @@ int main(int argc, char** argv)
     return 0;
 }
 
-void CpuCtor(CPU* cpu, int code_size, FILE* file)
+void CpuCtor(Cpu* cpu, int code_size, FILE* file)
 {
     cpu->code_size = code_size;
 
@@ -218,24 +221,36 @@ void CpuCtor(CPU* cpu, int code_size, FILE* file)
     StackCtor(cpu->stack);
 }
 
-void CpuCleaner(CPU* cpu)
+void CpuCleaner(Cpu* cpu)
 {
     StackDtor(&cpu->stack);
     free(cpu->RAM);
     free(cpu->code);
 }
 
-int* GetArg(CPU* cpu)
+int* GetArg(Cpu* cpu)
 {
     int  cmd = cpu->code[cpu->ip++];
     int* arg = NULL;
+
+    if (cmd & ARG_IMMED)
+    {
+        arg     += *(int*)(cpu->code + cpu->ip)
+        cpu->ip += sizeof(int);
+    }
+
+    if (cmd & ARG_REG)
+        arg += REGS[cpu->code[cpu->ip++]];
+
+    // if (cmd & ARG_MEM)
+    //     arg = cpu->RAM[*arg];
 
     return arg;
 }
 
 int  GetRAM(int* RAM, int index)
 {
-    sleep(0.05);
+    sleep(GET_RAM_DELAY);
 
     return RAM[index];
 }

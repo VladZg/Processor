@@ -22,7 +22,15 @@ enum {
       CP_FILECODE      = 1337,
       CMD_VERSION      = 4,
 
-      TECH_INFO_SIZE   = 3
+      TECH_INFO_SIZE   = 3,
+
+      ARG_IMMED        = 16,
+      ARG_REG          = 32,
+      ARG_MEM          = 64
      };
+
+const float GET_RAM_DELAY = 0.5;
+
+int REGS = {0, 1, 2, 3, 4}    //регистры
 
 #endif
