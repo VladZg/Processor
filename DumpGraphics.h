@@ -20,40 +20,40 @@
 #endif
 
 
-void FullDump(int* code, int code_size, int ip, Stack* stack)
+void FullDump(char* code, int code_size, int ip, Stack* stack)
 {
-    fprintf(stderr, "  \\\\=========");
+    fprintf(stderr, "  \\\\=====");
 
     for(int i = 0; i < code_size; i++)
-        fprintf(stderr, "===");
+        fprintf(stderr, "=====");
 
     fprintf(stderr, "\\\\\n    ip:   ");
 
     for (int i = 0; i < code_size; i++)
     {
-        fprintf(stderr, "%02d ", i);
+        fprintf(stderr, "%04d ", i);
     }
 
     fprintf(stderr, "\n    code: ");
 
     for (int i = 0; i < code_size; i++)
     {
-        fprintf(stderr, "%02d ", code[i]);
+        fprintf(stderr, "%04d ", code[i]);
     }
 
     fprintf(stderr, "\n    ------");
 
     for(int i = 0; i < ip; i++)
-        fprintf(stderr, "---");
+        fprintf(stderr, "-----");
 
     fprintf(stderr, "^ ip = %d\n", ip);
 
     SimpleStackDump_(stack);
 
-    fprintf(stderr, "  \\\\=========");
+    fprintf(stderr, "  \\\\======");
 
     for(int i = 0; i < code_size; i++)
-        fprintf(stderr, "===");
+        fprintf(stderr, "=====");
 
     fprintf(stderr, "\\\\\n\n");
 }

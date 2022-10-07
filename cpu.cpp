@@ -2,7 +2,7 @@
 #include "Constants.h"
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
 #include "Stack/Stack.h"
 // #define NDUMP
 
@@ -15,6 +15,21 @@
 
 const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
+
+struct CPU
+{
+    char*  code;
+    int    code_size;
+    size_t ip;
+    int*   RAM;
+    Stack  stack;
+};
+
+int* GetArg(CPU* cpu);
+int  GetRAM(int* RAM);
+void CpuCtor(CPU* cpu, int code_size, FILE* file);
+void CpuCleaner(CPU* cpu);
+
 
 int main(int argc, char** argv)
 {
@@ -40,80 +55,75 @@ int main(int argc, char** argv)
     FILE* file = fopen(FILENAME_INPUT, "rb");
     ASSERT(file != NULL);
 
-    // int* tech_info = (int*) calloc(TECH_INFO_SIZE, sizeof(int));
-    // ASSERT(tech_info != NULL);
-
     TechInfo tech_info = {};
 
     fread(&tech_info, sizeof(int), TECH_INFO_SIZE, file);
 
     if ((tech_info.filecode == CP_FILECODE) && (tech_info.version == CMD_VERSION))
     {
-        int code_size = tech_info.code_size;
+        CPU cpu = {};
+        CpuCtor(&cpu, tech_info.code_size, file);
 
-        int* code = (int*) calloc(code_size, sizeof(int));
-        ASSERT(code != NULL);
-
-        fread(code, sizeof(int), code_size, file);
-
-        Stack stk = {};
-        StackCtor(stk);
-
-        int ip = 0;
-
-        while (ip < code_size)
+        while (cpu.ip < cpu.code_size)
         {
-            switch(code[ip])
+            switch(cpu.code[cpu.ip])
             {
                 case CMD_PUSH:
                 {
-                    StackPush(&stk, code[1 + ip++]);
-                    SimpleStackDump(&stk, "Push");
+                    cpu.ip++;
+                    StackPush(&cpu.stack, *(int*)(cpu.code + cpu.ip));
+                    SimpleStackDump(&cpu.stack, "Push");
+                    cpu.ip += sizeof(int);
 
                     break;
                 }
 
                 case CMD_ADD:
                 {
-                    StackPush(&stk, StackPop(&stk) + StackPop(&stk));
-                    SimpleStackDump(&stk, "Add");
+                    StackPush(&cpu.stack, StackPop(&cpu.stack) + StackPop(&cpu.stack));
+                    SimpleStackDump(&cpu.stack, "Add");
+                    cpu.ip++;
 
                     break;
                 }
 
                 case CMD_SUB:
                 {
-                    int num = StackPop(&stk);
+                    int num = StackPop(&cpu.stack);
 
-                    StackPush(&stk, StackPop(&stk) - num);
-                    SimpleStackDump(&stk, "Sub");
+                    StackPush(&cpu.stack, StackPop(&cpu.stack) - num);
+                    SimpleStackDump(&cpu.stack, "Sub");
+                    cpu.ip++;
 
                     break;
                 }
 
                 case CMD_MUL:
                 {
-                    StackPush(&stk, StackPop(&stk) * StackPop(&stk));
-                    SimpleStackDump(&stk, "Mul");
+                    StackPush(&cpu.stack, StackPop(&cpu.stack) * StackPop(&cpu.stack));
+                    SimpleStackDump(&cpu.stack, "Mul");
+                    cpu.ip++;
 
                     break;
                 }
 
                 case CMD_DIV:
                 {
-                    int num = StackPop(&stk);
+                    int num = StackPop(&cpu.stack);
 
-                    StackPush(&stk, StackPop(&stk) / num);
-                    SimpleStackDump(&stk, "Div");
+                    StackPush(&cpu.stack, StackPop(&cpu.stack) / num);
+                    SimpleStackDump(&cpu.stack, "Div");
+                    cpu.ip++;
 
                     break;
                 }
 
                 case CMD_OUT:
                 {
-                    int popped = StackPop(&stk);
-                    SimpleStackDump(&stk, "Out");
+                    int popped = StackPop(&cpu.stack);
+                    SimpleStackDump(&cpu.stack, "Out");
                     fprintf(stderr, "  Output: %d\n\n", popped);
+                    cpu.ip++;
 
                     break;
                 }
@@ -125,16 +135,20 @@ int main(int argc, char** argv)
                     fprintf(stderr, "  Type a number, it'll be used in calculatings: ");
                     scanf("%d", &num);
 
-                    StackPush(&stk, num);
-                    SimpleStackDump(&stk, "Pin");
+                    StackPush(&cpu.stack, num);
+                    SimpleStackDump(&cpu.stack, "Pin");
+                    cpu.ip++;
 
                     break;
                 }
 
                 case CMD_HLT:
                 {
-                    StackDtor(&stk);
                     fprintf(stderr, "  Program \"%s\" has finished correctly\n", FILENAME_INPUT);
+
+                    CpuCleaner(&cpu);
+                    fclose(file);
+
                     exit(1);
 
                     break;
@@ -142,31 +156,34 @@ int main(int argc, char** argv)
 
                 case CMD_DUMP:
                 {
-                    FullDump(code, code_size, ip, &stk);
+                    FullDump(cpu.code, cpu.code_size, cpu.ip, &cpu.stack);
+                    cpu.ip++;
 
                     break;
                 }
 
                 default:
                 {
-                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", code[ip], FILENAME_INPUT);
+                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", cpu.code[cpu.ip], FILENAME_INPUT);
+
+                    CpuCleaner(&cpu);
+                    fclose(file);
+
                     exit(1);
                 }
             }
-
-            ip++;
         }
 
-        free(code);
-        // free(tech_info);
+        CpuCleaner(&cpu);
         fclose(file);
     }
 
     else if (tech_info.filecode != CP_FILECODE)
     {
         fprintf(stderr, "  WRONG TYPE OF ASM FILE!!!\n  YOU HAVE TO USE CP_FILECODE \"%d\"\n", CP_FILECODE);
-        // free(tech_info);
+
         fclose(file);
+
         exit(1);
     }
 
@@ -174,10 +191,51 @@ int main(int argc, char** argv)
     {
         fprintf(stderr, "  USED OLD (\"%d\") VERSION OF COMMANDS!!!\n  YOU HAVE TO USE THE \"%d\" VERSION!!!\n",
                 tech_info.version, CMD_VERSION);
-        // free(tech_info);
+
         fclose(file);
+
         exit(1);
     }
 
     return 0;
+}
+
+void CpuCtor(CPU* cpu, int code_size, FILE* file)
+{
+    cpu->code_size = code_size;
+
+    cpu->code = (char*) calloc(code_size, sizeof(char));
+    ASSERT(cpu->code != NULL);
+
+    cpu->RAM = (int*) calloc(RAM_SIZE, sizeof(int));
+    ASSERT(cpu->RAM != NULL);
+
+    fread(cpu->code, sizeof(char), code_size, file);
+
+    cpu->ip = 0;
+
+    cpu->stack = {};
+    StackCtor(cpu->stack);
+}
+
+void CpuCleaner(CPU* cpu)
+{
+    StackDtor(&cpu->stack);
+    free(cpu->RAM);
+    free(cpu->code);
+}
+
+int* GetArg(CPU* cpu)
+{
+    int  cmd = cpu->code[cpu->ip++];
+    int* arg = NULL;
+
+    return arg;
+}
+
+int  GetRAM(int* RAM, int index)
+{
+    sleep(0.05);
+
+    return RAM[index];
 }

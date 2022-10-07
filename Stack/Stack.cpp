@@ -397,16 +397,19 @@ void SimpleStackDump_(Stack* stack)
 
             if (stack->data[i] != poison)
             {
-                fprintf(stderr, "  *[%ld] = " KMAG, i);
+                fprintf(stderr, "    *[%ld] = " KMAG, i);
                 print_stack_elem(stack->data[i]);
                 fprintf(stderr, KNRM "\n");
             }
 
-            // else
-            // {
-            //     fprintf(stderr, "   [%ld] = " KBLU, i);
-            //     print_stack_elem(stack->data[i]);
-            //     fprintf(stderr, " (poison)\n" KNRM);
-            // }
+        #define N_WRITE_FULL_STACK
+        #ifndef N_WRITE_FULL_STACK
+            else
+            {
+                fprintf(stderr, "     [%ld] = " KBLU, i);
+                print_stack_elem(stack->data[i]);
+                fprintf(stderr, " (poison)\n" KNRM);
+            }
+        #endif
     }
 }

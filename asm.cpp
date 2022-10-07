@@ -15,6 +15,8 @@ const char  FILENAME_INPUT_DEFAULT[]  = "Source_default.txt";
 const char* FILENAME_INPUT            = nullptr;
 const char  FILENAME_OUTPUT[]         = "Source_output.asm";
 
+void CompilationError(size_t err_code, size_t line);
+
 int main(int argc, char** argv)
 {
     if (argc == 2)
@@ -38,23 +40,17 @@ int main(int argc, char** argv)
 
     char** text = nullptr;
     char*  data = nullptr;
-    int text_lines_amount = 0;
+    int    text_lines_amount = 0;
 
     FILE* file_out = fopen(FILENAME_OUTPUT, "wb");
     ASSERT(file_out != NULL);
 
     read_file_to_text(FILENAME_INPUT, &data, &text, &text_lines_amount);
 
-    int* code      = (int*) calloc(2 * text_lines_amount, sizeof(int));
+    char* code = (char*) calloc(5 * text_lines_amount, sizeof(char));
     ASSERT(code != NULL);
 
-    // int* tech_info = (int*) calloc(TECH_INFO_SIZE, sizeof(int));
-    // ASSERT(tech_info != NULL);
-
-    // sscanf(text[0], " %d %d %d", &(tech_info[0]), &(tech_info[1]), &(tech_info[2]));
-
-    int line  = 0;
-    int i     = 0;
+    int line = 0, ip = 0;
 
     TechInfo tech_info = {
                           CP_FILECODE,
@@ -72,36 +68,35 @@ int main(int argc, char** argv)
 
         if (strcasecmp(cmd, "push") == 0)
         {
-            // int val = 0;
-            // sscanf(text[line] + 4, "%d", &val);
-            code[i++] = CMD_PUSH;
-            tech_info.code_size++;
-            code[i++] = val;
+            code[ip++] = CMD_PUSH;
+            *(int*)(code + ip) = val;
+            ip += sizeof(int);
+            tech_info.code_size += sizeof(int);
         }
 
         else if (strcasecmp(cmd, "add") == 0)
-            code[i++] = CMD_ADD;
+            code[ip++] = CMD_ADD;
 
         else if (strcasecmp(cmd, "sub") == 0)
-            code[i++] = CMD_SUB;
+            code[ip++] = CMD_SUB;
 
         else if (strcasecmp(cmd, "mul") == 0)
-            code[i++] = CMD_MUL;
+            code[ip++] = CMD_MUL;
 
         else if (strcasecmp(cmd, "div") == 0)
-            code[i++] = CMD_DIV;
+            code[ip++] = CMD_DIV;
 
         else if (strcasecmp(cmd, "out") == 0)
-            code[i++] = CMD_OUT;
+            code[ip++] = CMD_OUT;
 
         else if (strcasecmp(cmd, "pin") == 0)
-            code[i++] = CMD_PIN;
+            code[ip++] = CMD_PIN;
 
         else if (strcasecmp(cmd, "hlt") == 0)
-            code[i++] = CMD_HLT;
+            code[ip++] = CMD_HLT;
 
         else if (strcasecmp(cmd, "dump") == 0)
-            code[i++] = CMD_DUMP;
+            code[ip++] = CMD_DUMP;
 
         else
         {
@@ -121,17 +116,28 @@ int main(int argc, char** argv)
         line++;
     }
 
-    // tech_info[0] = CP_FILECODE;
-    // tech_info[1] = CMD_VERSION;
-    // tech_info[2] = count;
+    FILE* file1 = fopen("test.txt", "wb");
 
     fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
-    fwrite((const void*) code, sizeof(int), tech_info.code_size, file_out);
+    fwrite((const void*) code, sizeof(char), tech_info.code_size, file_out);
 
     fclose(file_out);
     free(text);
     free(data);
-    // free(tech_info);
 
     return 0;
+}
+
+void CompilationError(size_t err_code, size_t line)
+{
+    switch (err_code)
+    {
+        case SYNTAX_ERR_CODE:
+        {
+            fprintf(stderr,"SyntaxError in line %ld", line);
+            break;
+        }
+
+        exit(1);
+    }
 }

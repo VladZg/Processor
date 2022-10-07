@@ -50,10 +50,10 @@ int main(int argc, char** argv)
     if ((tech_info.filecode == CP_FILECODE) && (tech_info.version == CMD_VERSION))
     {
         int code_size = tech_info.code_size;
-        int* code = (int*) calloc(code_size, sizeof(int));
+        char* code = (char*) calloc(code_size, sizeof(char));
         ASSERT(code != NULL);
 
-        fread(code, sizeof(int), code_size, file_inp);
+        fread(code, sizeof(char), code_size, file_inp);
 
         FILE* file_out = fopen(FILENAME_OUTPUT, "w");
         ASSERT(file_out != NULL);
@@ -66,7 +66,9 @@ int main(int argc, char** argv)
             {
                 case CMD_PUSH:
                 {
-                    fprintf(file_out, "Push %d\n", code[++ip]);
+                    ip++;
+                    fprintf(file_out, "Push %d\n", *(int*)(code + ip));
+                    ip += sizeof(int);
 
                     break;
                 }
@@ -74,6 +76,7 @@ int main(int argc, char** argv)
                 case CMD_ADD:
                 {
                     fprintf(file_out, "Add\n");
+                    ip++;
 
                     break;
                 }
@@ -81,6 +84,7 @@ int main(int argc, char** argv)
                 case CMD_SUB:
                 {
                     fprintf(file_out, "Sub\n");
+                    ip++;
 
                     break;
                 }
@@ -88,6 +92,7 @@ int main(int argc, char** argv)
                 case CMD_MUL:
                 {
                     fprintf(file_out, "Mul\n");
+                    ip++;
 
                     break;
                 }
@@ -95,6 +100,7 @@ int main(int argc, char** argv)
                 case CMD_DIV:
                 {
                     fprintf(file_out, "Div\n");
+                    ip++;
 
                     break;
                 }
@@ -102,6 +108,7 @@ int main(int argc, char** argv)
                 case CMD_OUT:
                 {
                     fprintf(file_out, "Out\n");
+                    ip++;
 
                     break;
                 }
@@ -109,6 +116,7 @@ int main(int argc, char** argv)
                 case CMD_PIN:
                 {
                     fprintf(file_out, "Pin\n");
+                    ip++;
 
                     break;
                 }
@@ -116,6 +124,7 @@ int main(int argc, char** argv)
                 case CMD_HLT:
                 {
                     fprintf(file_out, "Hlt\n");
+                    ip++;
 
                     break;
                 }
@@ -123,12 +132,11 @@ int main(int argc, char** argv)
                 case CMD_DUMP:
                 {
                     fprintf(file_out, "Dump\n");
+                    ip++;
 
                     break;
                 }
             }
-
-            ip++;
         }
 
         fclose(file_inp);

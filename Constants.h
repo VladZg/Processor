@@ -15,6 +15,10 @@ enum {
       WRNG_CMD         = -1,
       WRNG_CMD_VERSION = -1,
 
+      RAM_SIZE         = 100,
+
+      SYNTAX_ERR_CODE  = 1,
+
       CP_FILECODE      = 1337,
       CMD_VERSION      = 4,
 
