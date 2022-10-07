@@ -3,19 +3,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <cstdint>
 #include "Stack/Stack.h"
 // #define NDUMP
-
 #include "DumpGraphics.h"
 #include "TechInfo.h"
 #include "CheckFile.h"
+
+// #define PATRIOTIC_CPU
+#ifdef PATRIOTIC_CPU
+int RUSSIA = PrintRusFlag();
+#endif
 
 #undef FILENAME_INPUT
 #undef FILENAME_INPUT_DEFAULT
 
 const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
+
+int REGS[5] = {0, 1, 2, 3, 4};
 
 struct Cpu
 {
@@ -26,14 +31,14 @@ struct Cpu
     int*   RAM;
     Stack  stack;
 
-    int*   regs;
+    int*   Regs;
 };
 
-int* GetArg(Cpu* cpu);
-int  GetRAM(int* RAM);
-void CpuCtor(Cpu* cpu, int code_size, FILE* file);
-void CpuCleaner(Cpu* cpu);
-
+void GetArg     (Cpu* cpu, int* arg);
+int  GetRAM     (int* RAM);
+void CpuCtor    (Cpu* cpu, int code_size, FILE* file);
+void CpuCleaner (Cpu* cpu);
+void FullDump   (Cpu* cpu);
 
 int main(int argc, char** argv)
 {
@@ -159,7 +164,7 @@ int main(int argc, char** argv)
 
                 case CMD_DUMP:
                 {
-                    FullDump(cpu.code, cpu.code_size, cpu.ip, &cpu.stack);
+                    FullDump(&cpu);
                     cpu.ip++;
 
                     break;
@@ -205,6 +210,8 @@ int main(int argc, char** argv)
 
 void CpuCtor(Cpu* cpu, int code_size, FILE* file)
 {
+    cpu->Regs = REGS;
+
     cpu->code_size = code_size;
 
     cpu->code = (char*) calloc(code_size, sizeof(char));
@@ -228,24 +235,21 @@ void CpuCleaner(Cpu* cpu)
     free(cpu->code);
 }
 
-int* GetArg(Cpu* cpu)
+void GetArg(Cpu* cpu, int* arg)
 {
-    int  cmd = cpu->code[cpu->ip++];
-    int* arg = NULL;
+    int cmd = cpu->code[cpu->ip++];
 
     if (cmd & ARG_IMMED)
     {
-        arg     += *(int*)(cpu->code + cpu->ip)
+        *arg    += *(int*)(cpu->code + cpu->ip);
         cpu->ip += sizeof(int);
     }
 
     if (cmd & ARG_REG)
-        arg += REGS[cpu->code[cpu->ip++]];
+        *arg += cpu->Regs[cpu->code[cpu->ip++]];
 
-    // if (cmd & ARG_MEM)
-    //     arg = cpu->RAM[*arg];
-
-    return arg;
+    if (cmd & ARG_MEM)
+        *arg = cpu->RAM[*arg];
 }
 
 int  GetRAM(int* RAM, int index)
@@ -254,3 +258,52 @@ int  GetRAM(int* RAM, int index)
 
     return RAM[index];
 }
+
+#ifndef NDUMP
+
+void FullDump(Cpu* cpu)
+{
+    fprintf(stderr, "  \\\\");
+
+    WriteNSymb(5 * cpu->code_size + 5, '=');
+
+    fprintf(stderr, "\\\\\n    ip:   ");
+
+    for (int i = 0; i < cpu->code_size; i++)
+    {
+        if (i != cpu->ip)
+            fprintf(stderr, "%04d ", i);
+        else
+            fprintf(stderr, KYEL "%04d " KNRM, i);
+    }
+
+    fprintf(stderr, "\n    code: ");
+
+    for (int i = 0; i < cpu->code_size; i++)
+    {
+        if (i != cpu->ip)
+            fprintf(stderr, "%04d ", cpu->code[i]);
+        else
+            fprintf(stderr, KYEL "%04d " KNRM, cpu->code[i]);
+    }
+
+    fprintf(stderr, "\n    ");
+
+    WriteNSymb(5 * cpu->ip + 6, '-');
+
+    fprintf(stderr, KYEL "^ ip = %ld\n" KNRM, cpu->ip);
+
+    SimpleStackDump_(&cpu->stack);
+
+    fprintf(stderr, "  \\\\");
+
+    WriteNSymb(5 * cpu->code_size + 5, '=');
+
+    fprintf(stderr, "\\\\\n\n");
+}
+
+#else
+
+void FullDump(Cpu* cpu) {}
+
+#endif

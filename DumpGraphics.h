@@ -2,6 +2,7 @@
 #define DUMPGRAPHICS_H
 
 #include <stdio.h>
+#include "Stack/ColourConsts.h"
 #include "Stack/Stack.h"
 
 #ifndef  NDUMP
@@ -19,43 +20,30 @@
 
 #endif
 
-
-void FullDump(char* code, int code_size, int ip, Stack* stack)
+void WriteNSymb(size_t n, char symb)
 {
-    fprintf(stderr, "  \\\\=====");
+    for (int i = 0; i < n; i++)
+        fprintf(stderr, "%c", symb);
+}
 
-    for(int i = 0; i < code_size; i++)
-        fprintf(stderr, "=====");
+int PrintRusFlag()
+{
+    fprintf(stderr, "\n");
+    fprintf(stderr, KWHT "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n" KNRM);
+    fprintf(stderr, KBLU "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n" KNRM);
+    fprintf(stderr, KRED "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n"
+                         "  RUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIARUSSIA\n" KNRM);
+    fprintf(stderr, "\n");
 
-    fprintf(stderr, "\\\\\n    ip:   ");
-
-    for (int i = 0; i < code_size; i++)
-    {
-        fprintf(stderr, "%04d ", i);
-    }
-
-    fprintf(stderr, "\n    code: ");
-
-    for (int i = 0; i < code_size; i++)
-    {
-        fprintf(stderr, "%04d ", code[i]);
-    }
-
-    fprintf(stderr, "\n    ------");
-
-    for(int i = 0; i < ip; i++)
-        fprintf(stderr, "-----");
-
-    fprintf(stderr, "^ ip = %d\n", ip);
-
-    SimpleStackDump_(stack);
-
-    fprintf(stderr, "  \\\\======");
-
-    for(int i = 0; i < code_size; i++)
-        fprintf(stderr, "=====");
-
-    fprintf(stderr, "\\\\\n\n");
+    return 0xDED;
 }
 
 #endif

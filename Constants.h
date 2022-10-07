@@ -31,6 +31,4 @@ enum {
 
 const float GET_RAM_DELAY = 0.5;
 
-int REGS = {0, 1, 2, 3, 4}    //регистры
-
 #endif

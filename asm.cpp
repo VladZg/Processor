@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <cstdlib>
-#include <cstdint>
 #include "Onegin/defines.h"
 #include "Onegin/functions.h"
 #include "TechInfo.h"
@@ -17,11 +16,11 @@ const char* FILENAME_INPUT            = nullptr;
 const char  FILENAME_OUTPUT[]         = "Source_output.asm";
 
 struct Cmd {
-            // unsigned short unused : 1;
-            // unsigned short mem    : 1;
-            // unsigned short reg    : 1;
-            // unsigned short immed  : 1;
-            // unsigned short code   : 2;
+            unsigned short unused : 1;
+            unsigned short mem    : 1;
+            unsigned short reg    : 1;
+            unsigned short immed  : 1;
+            unsigned short code   : 2;
             int o;
             };
 
@@ -78,7 +77,7 @@ int main(int argc, char** argv)
 
         if (strcasecmp(cmd, "push") == 0)
         {
-            Cmd cmd
+            Cmd cmd = {};
 
             code[ip++] = CMD_PUSH;
             *(int*)(code + ip) = val;
