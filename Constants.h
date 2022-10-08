@@ -18,16 +18,24 @@ enum {
 
       RAM_SIZE         = 100,
 
-      SYNTAX_ERR_CODE  = 1,
+      SYNTAX_ERR_CODE      = 1,
+      DIV_ON_ZERO_ERR_CODE = 2,
 
       CP_FILECODE      = 1337,
       CMD_VERSION      = 4,
 
       TECH_INFO_SIZE   = 3,
 
+      RAX_CODE         = 1,
+      RBX_CODE         = 2,
+      RCX_CODE         = 3,
+      RDX_CODE         = 4,
+
       ARG_IMMED        = 16,
       ARG_REG          = 32,
-      ARG_MEM          = 64
+      ARG_MEM          = 64,
+
+      CMD_CODE_MASK    = 15
      };
 
 const float GET_RAM_DELAY = 0.5;

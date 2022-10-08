@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "Stack/Stack.h"
 
-#define NDUMP
+// #define NDUMP
 
 #include "DumpGraphics.h"
 #include "TechInfo.h"
@@ -41,6 +41,7 @@ int  GetRAM     (int* RAM);
 void CpuCtor    (Cpu* cpu, int code_size, FILE* file);
 void CpuCleaner (Cpu* cpu);
 void FullDump   (Cpu* cpu);
+void CpuError   (Cpu* cpu, FILE* file, int err_code);
 
 int main(int argc, char** argv)
 {
@@ -60,14 +61,16 @@ int main(int argc, char** argv)
 
         while (cpu.ip < cpu.code_size)
         {
-            switch(cpu.code[cpu.ip])
+            switch(cpu.code[cpu.ip] & CMD_CODE_MASK)
             {
                 case CMD_PUSH:
                 {
-                    cpu.ip++;
-                    StackPush(&cpu.stack, *(int*)(cpu.code + cpu.ip));
+                    int arg = 0;
+
+                    GetArg(&cpu, &arg);
+
+                    StackPush(&cpu.stack, arg);
                     SimpleStackDump(&cpu.stack, "Push");
-                    cpu.ip += sizeof(int);
 
                     break;
                 }
@@ -114,9 +117,15 @@ int main(int argc, char** argv)
                 {
                     int num = StackPop(&cpu.stack);
 
-                    StackPush(&cpu.stack, StackPop(&cpu.stack) / num);
-                    SimpleStackDump(&cpu.stack, "Div");
-                    cpu.ip++;
+                    if (num)
+                    {
+                        StackPush(&cpu.stack, StackPop(&cpu.stack) / num);
+                        SimpleStackDump(&cpu.stack, "Div");
+                        cpu.ip++;
+                    }
+
+                    else
+                        CpuError(&cpu, file, DIV_ON_ZERO_ERR_CODE);
 
                     break;
                 }
@@ -241,10 +250,13 @@ void GetArg(Cpu* cpu, int* arg)
     }
 
     if (cmd & ARG_REG)
-        *arg += cpu->Regs[cpu->code[cpu->ip++]];
+    {
+        *arg    += cpu->Regs[*(int*)(cpu->code + cpu->ip)];
+        cpu->ip += sizeof(int);
+    }
 
-    if (cmd & ARG_MEM)
-        *arg = cpu->RAM[*arg];
+    // if (cmd & ARG_MEM)
+        // *arg = cpu->RAM[*arg];
 }
 
 int  GetRAM(int* RAM, int index)
@@ -302,3 +314,22 @@ void FullDump(Cpu* cpu)
 void FullDump(Cpu* cpu) {}
 
 #endif
+
+void CpuError(Cpu* cpu, FILE* file, int err_code)
+{
+    switch(err_code)
+    {
+        case DIV_ON_ZERO_ERR_CODE:
+        {
+            fprintf(stderr, "  ERROR: Division on zero");
+
+            break;
+        }
+    }
+
+    fprintf(stderr, " in line (? эта функция пока недоступна, ха-ха)\n");
+
+    CpuCleaner(cpu);
+    fclose(file);
+    exit(1);
+}
