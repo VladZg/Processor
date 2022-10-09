@@ -22,7 +22,7 @@ int RUSSIA = PrintRusFlag();
 const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
 
-int REGS[5] = {0, 1, 2, 3, 4};
+int REGS[5] = {0, 0, 0, 0, 0};
 
 struct Cpu
 {
@@ -36,8 +36,8 @@ struct Cpu
     int*   Regs;
 };
 
-void GetArg     (Cpu* cpu, int* arg);
-int  GetRAM     (int* RAM);
+int* GetArg     (Cpu* cpu, int cmd, int* arg);
+int  GetRAM     (Cpu* cpu, int index);
 void CpuCtor    (Cpu* cpu, int code_size, FILE* file);
 void CpuCleaner (Cpu* cpu);
 void FullDump   (Cpu* cpu);
@@ -61,15 +61,17 @@ int main(int argc, char** argv)
 
         while (cpu.ip < cpu.code_size)
         {
-            switch(cpu.code[cpu.ip] & CMD_CODE_MASK)
+            int cmd = cpu.code[cpu.ip];
+
+            switch(cmd & CMD_CODE_MASK)
             {
                 case CMD_PUSH:
                 {
-                    int arg = 0;
+                    int arg_temp = 0;
+                    cpu.ip++;
+                    int* arg = GetArg(&cpu, cmd, &arg_temp);
+                    StackPush(&cpu.stack, *arg);
 
-                    GetArg(&cpu, &arg);
-
-                    StackPush(&cpu.stack, arg);
                     SimpleStackDump(&cpu.stack, "Push");
 
                     break;
@@ -77,9 +79,32 @@ int main(int argc, char** argv)
 
                 case CMD_POP:
                 {
-                    StackPop(&cpu.stack);
-                    SimpleStackDump(&cpu.stack, "Pop");
+                    int arg_temp = 0;
+                    int* arg = 0;
+
                     cpu.ip++;
+
+                    if (cmd & ARG_MEM)
+                    {
+                        cmd &= ~ARG_MEM;
+                        arg = &cpu.RAM[*GetArg(&cpu, cmd, &arg_temp)];
+                    }
+
+                    else if ((cmd & ARG_REG) && !(cmd & ARG_IMMED))
+                    {
+                        arg = &cpu.Regs[cpu.code[cpu.ip]];
+                        cpu.ip += sizeof(int);
+                    }
+
+                    else
+                    {
+                        fprintf(stderr, "Wrong type of argument\n");
+                        exit(1);
+                    }
+
+                    *arg = StackPop(&cpu.stack);
+
+                    SimpleStackDump(&cpu.stack, "Pop");
 
                     break;
                 }
@@ -87,6 +112,7 @@ int main(int argc, char** argv)
                 case CMD_ADD:
                 {
                     StackPush(&cpu.stack, StackPop(&cpu.stack) + StackPop(&cpu.stack));
+
                     SimpleStackDump(&cpu.stack, "Add");
                     cpu.ip++;
 
@@ -98,6 +124,7 @@ int main(int argc, char** argv)
                     int num = StackPop(&cpu.stack);
 
                     StackPush(&cpu.stack, StackPop(&cpu.stack) - num);
+
                     SimpleStackDump(&cpu.stack, "Sub");
                     cpu.ip++;
 
@@ -107,6 +134,7 @@ int main(int argc, char** argv)
                 case CMD_MUL:
                 {
                     StackPush(&cpu.stack, StackPop(&cpu.stack) * StackPop(&cpu.stack));
+
                     SimpleStackDump(&cpu.stack, "Mul");
                     cpu.ip++;
 
@@ -120,6 +148,7 @@ int main(int argc, char** argv)
                     if (num)
                     {
                         StackPush(&cpu.stack, StackPop(&cpu.stack) / num);
+
                         SimpleStackDump(&cpu.stack, "Div");
                         cpu.ip++;
                     }
@@ -134,7 +163,8 @@ int main(int argc, char** argv)
                 {
                     int popped = StackPop(&cpu.stack);
                     SimpleStackDump(&cpu.stack, "Out");
-                    fprintf(stderr, "  Output: %d\n\n", popped);
+                    fprintf(stderr, "    %d\n", popped);
+
                     cpu.ip++;
 
                     break;
@@ -148,6 +178,7 @@ int main(int argc, char** argv)
                     scanf("%d", &num);
 
                     StackPush(&cpu.stack, num);
+
                     SimpleStackDump(&cpu.stack, "Pin");
                     cpu.ip++;
 
@@ -239,9 +270,16 @@ void CpuCleaner(Cpu* cpu)
     free(cpu->code);
 }
 
-void GetArg(Cpu* cpu, int* arg)
+int GetRAM(Cpu* cpu, int index)
 {
-    int cmd = cpu->code[cpu->ip++];
+    sleep(GET_RAM_DELAY);
+
+    return cpu->RAM[index];
+}
+
+int* GetArg(Cpu* cpu, int cmd, int* arg)
+{
+    // fprintf(stderr, "1: %d %d %d %d\n", cmd, cmd & ARG_IMMED, cmd & ARG_REG, cmd & ARG_MEM);
 
     if (cmd & ARG_IMMED)
     {
@@ -255,15 +293,12 @@ void GetArg(Cpu* cpu, int* arg)
         cpu->ip += sizeof(int);
     }
 
-    // if (cmd & ARG_MEM)
-        // *arg = cpu->RAM[*arg];
-}
+    if (cmd & ARG_MEM)
+        *arg = GetRAM(cpu, *arg);
 
-int  GetRAM(int* RAM, int index)
-{
-    sleep(GET_RAM_DELAY);
+    // fprintf(stderr, "\n2: %d\n", *arg);
 
-    return RAM[index];
+    return arg;
 }
 
 #ifndef NDUMP
@@ -302,7 +337,12 @@ void FullDump(Cpu* cpu)
 
     SimpleStackDump_(&cpu->stack);
 
-    fprintf(stderr, "  \\\\");
+    fprintf(stderr, "\n    registers:\n    {\n");
+
+    for (int i = 1; i <= REGS_SIZE; i++)
+        fprintf(stderr, "        *[%d] = %d\n",  i, cpu->Regs[i]);
+
+    fprintf(stderr, "    }\n  \\\\");
 
     WriteNSymb(5 * cpu->code_size + 5, '=');
 

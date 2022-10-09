@@ -12,7 +12,23 @@ enum {
       CMD_DUMP         = 7,
       CMD_PIN          = 8,
       CMD_POP          = 9,
+      CMD_JUMP         = 10,
+      CMD_JB           = 11,
+      CMD_JBE          = 12,
+      CMD_JA           = 13,
+      CMD_JAE          = 14,
+      CMD_JE           = 15,
+      CMD_JNE          = 16,
+      CMD_JF           = 17
+      } Comands;
 
+enum {
+      NUMBER           = 1,
+      REGISTER         = 2,
+      RAM_ELEM         = 3
+      } Arg_types;
+
+enum {
       WRNG_CMD         = -1,
       WRNG_CMD_VERSION = -1,
 
@@ -31,11 +47,13 @@ enum {
       RCX_CODE         = 3,
       RDX_CODE         = 4,
 
-      ARG_IMMED        = 16,
-      ARG_REG          = 32,
-      ARG_MEM          = 64,
+      REGS_SIZE        = 4,
 
-      CMD_CODE_MASK    = 15
+      ARG_IMMED        = 32,
+      ARG_REG          = 64,
+      ARG_MEM          = 128,
+
+      CMD_CODE_MASK    = 31
      };
 
 const float GET_RAM_DELAY = 0.5;
