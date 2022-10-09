@@ -7,7 +7,7 @@
 
 // #define NDUMP
 
-#include "DumpGraphics.h"
+#include "CpuGraphics.h"
 #include "TechInfo.h"
 #include "CheckFile.h"
 
@@ -22,8 +22,6 @@ int RUSSIA = PrintRusFlag();
 const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
 
-int REGS[5] = {0, 0, 0, 0, 0};
-
 struct Cpu
 {
     char*  code;
@@ -36,19 +34,247 @@ struct Cpu
     int*   Regs;
 };
 
+#define IP    cpu.ip
+#define CODE  cpu.code
+#define STACK cpu.stack
+
+int  DoCpuCycle (const char* filename_input);
+
 int* GetArg     (Cpu* cpu, int cmd, int* arg);
-int  GetRAM     (Cpu* cpu, int index);
+int* GetRAM     (Cpu* cpu, int index);
+
 void CpuCtor    (Cpu* cpu, int code_size, FILE* file);
 void CpuCleaner (Cpu* cpu);
-void FullDump   (Cpu* cpu);
 void CpuError   (Cpu* cpu, FILE* file, int err_code);
+
+void PrintCmdName (const char* cmd);
+void RAMDump      (int* RAM);
+void RegsDump     (int* Regs);
+void FullDump     (Cpu* cpu, char ip_min, char ip_max);
+
 
 int main(int argc, char** argv)
 {
     if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
 
-    FILE* file = fopen(FILENAME_INPUT, "rb");
+    DoCpuCycle(FILENAME_INPUT);
+
+    return 0;
+}
+
+
+void CpuCtor(Cpu* cpu, int code_size, FILE* file)
+{
+    cpu->Regs = START_REGS;
+
+    cpu->code_size = code_size;
+
+    cpu->code = (char*) calloc(code_size, sizeof(char));
+    ASSERT(cpu->code != NULL);
+
+    cpu->RAM = (int*) calloc(RAM_SIZE + 1, sizeof(int));
+    ASSERT(cpu->RAM != NULL);
+
+    for (int i = 0; i <= RAM_SIZE; i++) cpu->RAM[i] = RAM_POISON;
+
+    fread(cpu->code, sizeof(char), code_size, file);
+
+    cpu->ip = 0;
+
+    cpu->stack = {};
+    StackCtor(cpu->stack);
+}
+
+void CpuCleaner(Cpu* cpu)
+{
+    StackDtor(&cpu->stack);
+    free(cpu->RAM);
+    free(cpu->code);
+}
+
+int* GetRAM(Cpu* cpu, int index)
+{
+    fprintf(stderr, "  Getting RAM[%d] value", index);
+
+    int n_cycles = (int) (GET_RAM_DELAY / MIN_CYCLE_DELAY);
+
+    struct timespec t_r = {0, (int) (MIN_CYCLE_DELAY / 2 / 3 * 1000000000)};
+    struct timespec t_w;
+
+    for (int i = 0; i < n_cycles; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            nanosleep(&t_r, &t_w);
+            fprintf(stderr, ".");
+            nanosleep(&t_r, &t_w);
+        }
+        fprintf(stderr, "\b\b\b   \b\b\b");
+    }
+
+    fprintf(stderr, "\r                                \r");
+
+    return &cpu->RAM[index];
+}
+
+int* GetArg(Cpu* cpu, int cmd, int* arg)
+{
+    // fprintf(stderr, "1: %d %d %d %d\n", cmd, cmd & ARG_IMMED, cmd & ARG_REG, cmd & ARG_MEM);
+
+    if (cmd & ARG_IMMED)
+    {
+        *arg    += *(int*)(cpu->code + cpu->ip);
+        cpu->ip += sizeof(int);
+    }
+
+    if (cmd & ARG_REG)
+    {
+        *arg    += cpu->Regs[*(int*)(cpu->code + cpu->ip)];
+        cpu->ip += sizeof(int);
+    }
+
+    if (cmd & ARG_MEM)
+        arg = GetRAM(cpu, *arg);
+
+    // fprintf(stderr, "\n2: %d\n", *arg);
+
+    return arg;
+}
+
+#ifndef NDUMP
+
+void PrintCmdName(const char* cmd)
+{
+    fprintf(stderr, KRED "  %s:\n" KNRM, cmd);
+}
+
+void RAMDump(int* RAM)
+{
+    fprintf(stderr, "    RAM (not empty cells):\n    {\n");
+
+    int count_empties = 0;
+
+    for (int i = 0; i <= RAM_SIZE; i++)
+    {
+        int num = RAM[i];
+
+        if (num != RAM_POISON)
+        {
+            fprintf(stderr, "        *[%d] = " KMAG "%d\n" KNRM,  i, num);
+            count_empties++;
+        }
+    }
+
+    if (!count_empties) fprintf(stderr, KBLU "        RAM is empty\n" KNRM);
+
+    fprintf(stderr, "    }\n\n");
+}
+
+void RegsDump(int* Regs)
+{
+    fprintf(stderr, "    Registers:\n    {\n");
+
+    for (int i = 1; i <= REGS_SIZE; i++)
+        fprintf(stderr, "        *[%d] = " KMAG "%d\n" KNRM,  i, Regs[i]);
+
+    fprintf(stderr, "    }\n\n");
+}
+
+void FullDump(Cpu* cpu, char ip_min, char ip_max)
+{
+    size_t ip_now = cpu->ip;
+
+    if ((ip_min != -1) && (ip_max <= cpu->code_size - 1))
+        fprintf(stderr, KRED "  Dump (ip: %d -> %d):\n" KNRM, ip_min, ip_max);
+
+    else
+    {
+        fprintf(stderr, "  Dump (full code):\n");
+        ip_min = 0;
+        ip_max = cpu->code_size - 1;
+    }
+
+    fprintf(stderr, "  \\\\");
+
+    WriteNSymb(176, '=');
+
+    fprintf(stderr, "\\\\\n\n    ip:   ");
+
+    for (int i = ip_min; i <= ip_max; i++)
+    {
+        if (i != ip_now)
+            fprintf(stderr, "%04d ", i);
+        else
+            fprintf(stderr, KYEL "%04d " KNRM, i);
+    }
+
+    fprintf(stderr, "\n    code: ");
+
+    for (int i = ip_min; i <= ip_max; i++)
+    {
+        if (i != ip_now)
+            fprintf(stderr, "%04d ", cpu->code[i]);
+        else
+            fprintf(stderr, KYEL "%04d " KNRM, cpu->code[i]);
+    }
+
+    fprintf(stderr, "\n    ");
+
+    if ((ip_now >= ip_min) && (ip_now <= ip_max))
+    {
+        WriteNSymb(5 * (ip_now - ip_min) + 6, '-');
+        fprintf(stderr, KYEL "^ " KNRM);
+    }
+
+    fprintf(stderr, KYEL "ip = %ld\n\n" KNRM, ip_now);
+
+    SimpleStackDump_(&cpu->stack);
+
+    fprintf(stderr, "\n");
+
+    RegsDump(cpu->Regs);
+
+    RAMDump(cpu->RAM);
+
+    fprintf(stderr, "  \\\\");
+
+    WriteNSymb(176, '=');
+
+    fprintf(stderr, "\\\\\n\n");
+}
+
+#else
+
+void PrintCmdName(const char* cmd) {}
+void RegsDump(int* Regs) {}
+void RAMDump(int* RAM) {}
+void FullDump(Cpu* cpu, char ip_min, char ip_max) {}
+
+#endif
+
+void CpuError(Cpu* cpu, FILE* file, int err_code)
+{
+    switch(err_code)
+    {
+        case DIV_ON_ZERO_ERR_CODE:
+        {
+            fprintf(stderr, "  ERROR: Division on zero");
+
+            break;
+        }
+    }
+
+    fprintf(stderr, " in line (? эта функция пока недоступна, ха-ха)\n");
+
+    CpuCleaner(cpu);
+    fclose(file);
+    exit(1);
+}
+
+int DoCpuCycle(const char* filename_input)
+{
+    FILE* file = fopen(filename_input, "rb");
     ASSERT(file != NULL);
 
     TechInfo tech_info = {};
@@ -59,41 +285,67 @@ int main(int argc, char** argv)
         Cpu cpu = {};
         CpuCtor(&cpu, tech_info.code_size, file);
 
-        while (cpu.ip < cpu.code_size)
+        while (IP < cpu.code_size)
         {
-            int cmd = cpu.code[cpu.ip];
+            int cmd = CODE[IP];
 
             switch(cmd & CMD_CODE_MASK)
             {
                 case CMD_PUSH:
                 {
-                    int arg_temp = 0;
-                    cpu.ip++;
-                    int* arg = GetArg(&cpu, cmd, &arg_temp);
-                    StackPush(&cpu.stack, *arg);
+                    PrintCmdName("Push");
 
-                    SimpleStackDump(&cpu.stack, "Push");
+                    int arg_temp = 0;
+                    IP++;
+                    int* arg = GetArg(&cpu, cmd, &arg_temp);
+
+                    if (*arg != RAM_POISON)
+                        StackPush(&STACK, *arg);
+
+                    else
+                    {
+                        fprintf(stderr, "    ERROR: ARGUMENT OF PUSH IS POISONED ELEM FROM THE RAM\n");
+
+                        CpuCleaner(&cpu);
+                        fclose(file);
+
+                        exit(1);
+                    }
+
+                    SimpleStackDump(&STACK);
 
                     break;
                 }
 
                 case CMD_POP:
                 {
+                    PrintCmdName("Pop");
+
                     int arg_temp = 0;
                     int* arg = 0;
 
-                    cpu.ip++;
+                    IP++;
 
                     if (cmd & ARG_MEM)
                     {
                         cmd &= ~ARG_MEM;
-                        arg = &cpu.RAM[*GetArg(&cpu, cmd, &arg_temp)];
+                        arg = GetArg(&cpu, cmd, &arg_temp);
+
+                        if ((*arg <= RAM_SIZE) && (*arg >= 0))
+                            arg = GetRAM(&cpu, *arg);
+
+                        else
+                        {
+                            fprintf(stderr, "  ERROR: ARGUMENT OF POP (%d) IS OUT OF RAM RANGE\n", *arg);
+                            CpuCleaner(&cpu);
+                            exit(1);
+                        }
                     }
 
                     else if ((cmd & ARG_REG) && !(cmd & ARG_IMMED))
                     {
-                        arg = &cpu.Regs[cpu.code[cpu.ip]];
-                        cpu.ip += sizeof(int);
+                        arg = &cpu.Regs[CODE[IP]];
+                        IP += sizeof(int);
                     }
 
                     else
@@ -102,55 +354,69 @@ int main(int argc, char** argv)
                         exit(1);
                     }
 
-                    *arg = StackPop(&cpu.stack);
+                    *arg = StackPop(&STACK);
 
-                    SimpleStackDump(&cpu.stack, "Pop");
+                    SimpleStackDump(&STACK);
+                    RegsDump(cpu.Regs);
+                    RAMDump(cpu.RAM);
 
                     break;
                 }
 
                 case CMD_ADD:
                 {
-                    StackPush(&cpu.stack, StackPop(&cpu.stack) + StackPop(&cpu.stack));
+                    PrintCmdName("Add");
 
-                    SimpleStackDump(&cpu.stack, "Add");
-                    cpu.ip++;
+                    StackPush(&STACK, StackPop(&STACK) + StackPop(&STACK));
+
+                    SimpleStackDump(&STACK);
+
+                    IP++;
 
                     break;
                 }
 
                 case CMD_SUB:
                 {
-                    int num = StackPop(&cpu.stack);
+                    PrintCmdName("Sub");
 
-                    StackPush(&cpu.stack, StackPop(&cpu.stack) - num);
+                    int num = StackPop(&STACK);
 
-                    SimpleStackDump(&cpu.stack, "Sub");
-                    cpu.ip++;
+                    StackPush(&STACK, StackPop(&STACK) - num);
+
+                    SimpleStackDump(&STACK);
+
+                    IP++;
 
                     break;
                 }
 
                 case CMD_MUL:
                 {
-                    StackPush(&cpu.stack, StackPop(&cpu.stack) * StackPop(&cpu.stack));
+                    PrintCmdName("Mul");
 
-                    SimpleStackDump(&cpu.stack, "Mul");
-                    cpu.ip++;
+                    StackPush(&STACK, StackPop(&STACK) * StackPop(&STACK));
+
+                    SimpleStackDump(&STACK);
+
+                    IP++;
 
                     break;
                 }
 
                 case CMD_DIV:
                 {
-                    int num = StackPop(&cpu.stack);
+                    PrintCmdName("Div");
+
+                    int num = StackPop(&STACK);
 
                     if (num)
                     {
-                        StackPush(&cpu.stack, StackPop(&cpu.stack) / num);
+                        StackPush(&STACK, StackPop(&STACK) / num);
 
-                        SimpleStackDump(&cpu.stack, "Div");
-                        cpu.ip++;
+                        SimpleStackDump(&STACK);
+
+                        IP++;
                     }
 
                     else
@@ -161,53 +427,68 @@ int main(int argc, char** argv)
 
                 case CMD_OUT:
                 {
-                    int popped = StackPop(&cpu.stack);
-                    SimpleStackDump(&cpu.stack, "Out");
-                    fprintf(stderr, "    %d\n", popped);
+                    PrintCmdName("Out");
 
-                    cpu.ip++;
+                    int popped = StackPop(&STACK);
+
+                    SimpleStackDump(&STACK);
+
+                    fprintf(stderr, "    %d ", popped);
+
+                    if (popped == RAM_POISON) fprintf(stderr, KGRN "(RAM poison)" KNRM);
+
+                    fprintf(stderr, "\n\n");
+
+                    IP++;
 
                     break;
                 }
 
                 case CMD_PIN:
                 {
+                     PrintCmdName("Pin");
+
                     int num = 0;
 
                     fprintf(stderr, "  Type a number, it'll be used in calculatings: ");
                     scanf("%d", &num);
 
-                    StackPush(&cpu.stack, num);
+                    StackPush(&STACK, num);
 
-                    SimpleStackDump(&cpu.stack, "Pin");
-                    cpu.ip++;
+                    SimpleStackDump(&STACK);
+
+                    IP++;
 
                     break;
                 }
 
                 case CMD_HLT:
                 {
-                    fprintf(stderr, "  Program \"%s\" has finished correctly\n", FILENAME_INPUT);
+                    PrintCmdName("Hlt");
+
+                    fprintf(stderr, "    Program \"%s\" has finished correctly\n", FILENAME_INPUT);
 
                     CpuCleaner(&cpu);
                     fclose(file);
 
-                    exit(1);
-
-                    break;
+                    return 1;
                 }
 
                 case CMD_DUMP:
                 {
-                    FullDump(&cpu);
-                    cpu.ip++;
+                    char ip_min = CODE[IP + 1];
+                    char ip_max = CODE[IP + 2];
+
+                    FullDump(&cpu, ip_min, ip_max);
+
+                    IP += 3;
 
                     break;
                 }
 
                 default:
                 {
-                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", cpu.code[cpu.ip], FILENAME_INPUT);
+                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", CODE[IP], FILENAME_INPUT);
 
                     CpuCleaner(&cpu);
                     fclose(file);
@@ -241,135 +522,4 @@ int main(int argc, char** argv)
     }
 
     return 0;
-}
-
-void CpuCtor(Cpu* cpu, int code_size, FILE* file)
-{
-    cpu->Regs = REGS;
-
-    cpu->code_size = code_size;
-
-    cpu->code = (char*) calloc(code_size, sizeof(char));
-    ASSERT(cpu->code != NULL);
-
-    cpu->RAM = (int*) calloc(RAM_SIZE, sizeof(int));
-    ASSERT(cpu->RAM != NULL);
-
-    fread(cpu->code, sizeof(char), code_size, file);
-
-    cpu->ip = 0;
-
-    cpu->stack = {};
-    StackCtor(cpu->stack);
-}
-
-void CpuCleaner(Cpu* cpu)
-{
-    StackDtor(&cpu->stack);
-    free(cpu->RAM);
-    free(cpu->code);
-}
-
-int GetRAM(Cpu* cpu, int index)
-{
-    sleep(GET_RAM_DELAY);
-
-    return cpu->RAM[index];
-}
-
-int* GetArg(Cpu* cpu, int cmd, int* arg)
-{
-    // fprintf(stderr, "1: %d %d %d %d\n", cmd, cmd & ARG_IMMED, cmd & ARG_REG, cmd & ARG_MEM);
-
-    if (cmd & ARG_IMMED)
-    {
-        *arg    += *(int*)(cpu->code + cpu->ip);
-        cpu->ip += sizeof(int);
-    }
-
-    if (cmd & ARG_REG)
-    {
-        *arg    += cpu->Regs[*(int*)(cpu->code + cpu->ip)];
-        cpu->ip += sizeof(int);
-    }
-
-    if (cmd & ARG_MEM)
-        *arg = GetRAM(cpu, *arg);
-
-    // fprintf(stderr, "\n2: %d\n", *arg);
-
-    return arg;
-}
-
-#ifndef NDUMP
-
-void FullDump(Cpu* cpu)
-{
-    fprintf(stderr, "  \\\\");
-
-    WriteNSymb(5 * cpu->code_size + 5, '=');
-
-    fprintf(stderr, "\\\\\n    ip:   ");
-
-    for (int i = 0; i < cpu->code_size; i++)
-    {
-        if (i != cpu->ip)
-            fprintf(stderr, "%04d ", i);
-        else
-            fprintf(stderr, KYEL "%04d " KNRM, i);
-    }
-
-    fprintf(stderr, "\n    code: ");
-
-    for (int i = 0; i < cpu->code_size; i++)
-    {
-        if (i != cpu->ip)
-            fprintf(stderr, "%04d ", cpu->code[i]);
-        else
-            fprintf(stderr, KYEL "%04d " KNRM, cpu->code[i]);
-    }
-
-    fprintf(stderr, "\n    ");
-
-    WriteNSymb(5 * cpu->ip + 6, '-');
-
-    fprintf(stderr, KYEL "^ ip = %ld\n" KNRM, cpu->ip);
-
-    SimpleStackDump_(&cpu->stack);
-
-    fprintf(stderr, "\n    registers:\n    {\n");
-
-    for (int i = 1; i <= REGS_SIZE; i++)
-        fprintf(stderr, "        *[%d] = %d\n",  i, cpu->Regs[i]);
-
-    fprintf(stderr, "    }\n  \\\\");
-
-    WriteNSymb(5 * cpu->code_size + 5, '=');
-
-    fprintf(stderr, "\\\\\n\n");
-}
-
-#else
-
-void FullDump(Cpu* cpu) {}
-
-#endif
-
-void CpuError(Cpu* cpu, FILE* file, int err_code)
-{
-    switch(err_code)
-    {
-        case DIV_ON_ZERO_ERR_CODE:
-        {
-            fprintf(stderr, "  ERROR: Division on zero");
-
-            break;
-        }
-    }
-
-    fprintf(stderr, " in line (? эта функция пока недоступна, ха-ха)\n");
-
-    CpuCleaner(cpu);
-    fclose(file);
-    exit(1);
 }

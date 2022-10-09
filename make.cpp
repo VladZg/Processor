@@ -89,12 +89,12 @@ int main()
         is_file_changed++;
     }
 
-    // if (source_out_chng_time - buff_source_out.st_mtime)  // перекомпиляция, если файл "Source.txt" изменился
-    // {
-        // system("./disasm " SOURCE_ASM_FILE);
-        // WriteCompilationInfo("  File \"%s\" was redisassemblered\n", SOURCE_ASM_FILE);
-        // is_file_changed++;
-    // }
+    if (source_out_chng_time - buff_source_out.st_mtime)  // перекомпиляция, если файл "Source.txt" изменился
+    {
+        system("./disasm " SOURCE_ASM_FILE);
+        WriteCompilationInfo("  File \"%s\" was redisassemblered\n", SOURCE_ASM_FILE);
+        is_file_changed++;
+    }
 
     fclose(filesinfo_file);
 

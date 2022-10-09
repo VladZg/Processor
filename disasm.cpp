@@ -20,11 +20,24 @@ const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
 const char  FILENAME_OUTPUT[]         = "Source_output_disasmed.txt";
 
+void PrintArgs(char cmd, char* code, int* ip, FILE* file_out);
+const char* ConvertReg(int reg_code);
+int  Decompile(const char* filename_input, const char* filename_output);
+
+
 int main(int argc, char** argv)
 {
     if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
 
+    Decompile(FILENAME_INPUT, FILENAME_OUTPUT);
+
+    return 0;
+}
+
+
+int Decompile(const char* filename_input, const char* filename_output)
+{
     FILE* file_inp = fopen(FILENAME_INPUT, "rb");
     ASSERT(file_inp != NULL);
 
@@ -46,87 +59,104 @@ int main(int argc, char** argv)
 
         while (ip < code_size)
         {
-            switch(code[ip])
+            char cmd = code[ip];
+
+            switch(cmd & CMD_CODE_MASK)
             {
                 case CMD_PUSH:
                 {
                     ip++;
-                    fprintf(file_out, "Push %d\n", *(int*)(code + ip));
-                    ip += sizeof(int);
+                    fprintf(file_out, "Push ");
+                    PrintArgs(cmd, code, &ip, file_out);
+                    fprintf(file_out, "\n");
 
                     break;
                 }
 
                 case CMD_POP:
                 {
-                    fprintf(file_out, "Pop\n");
                     ip++;
+                    fprintf(file_out, "Pop ");
+                    PrintArgs(cmd, code, &ip, file_out);
+                    fprintf(file_out, "\n");
 
                     break;
                 }
 
                 case CMD_ADD:
                 {
-                    fprintf(file_out, "Add\n");
                     ip++;
+                    fprintf(file_out, "Add\n");
 
                     break;
                 }
 
                 case CMD_SUB:
                 {
-                    fprintf(file_out, "Sub\n");
                     ip++;
+                    fprintf(file_out, "Sub\n");
 
                     break;
                 }
 
                 case CMD_MUL:
                 {
-                    fprintf(file_out, "Mul\n");
                     ip++;
+                    fprintf(file_out, "Mul\n");
 
                     break;
                 }
 
                 case CMD_DIV:
                 {
-                    fprintf(file_out, "Div\n");
                     ip++;
+                    fprintf(file_out, "Div\n");
 
                     break;
                 }
 
                 case CMD_OUT:
                 {
-                    fprintf(file_out, "Out\n");
                     ip++;
+                    fprintf(file_out, "Out\n");
 
                     break;
                 }
 
                 case CMD_PIN:
                 {
-                    fprintf(file_out, "Pin\n");
                     ip++;
+                    fprintf(file_out, "Pin\n");
 
                     break;
                 }
 
                 case CMD_HLT:
                 {
-                    fprintf(file_out, "Hlt\n");
                     ip++;
+                    fprintf(file_out, "Hlt\n");
 
                     break;
                 }
 
                 case CMD_DUMP:
                 {
-                    fprintf(file_out, "Dump\n");
                     ip++;
+                    fprintf(file_out, "Dump ");
+                    fprintf(file_out, "%d ", *(code + (ip++)));
+                    fprintf(file_out, "%d\n", *(code + (ip++)));
 
                     break;
+                }
+
+                default:
+                {
+                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", code[ip], FILENAME_INPUT);
+
+                    fclose(file_inp);
+                    fclose(file_out);
+
+                    exit(1);
                 }
             }
         }
@@ -152,7 +182,58 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    return 0;
+    return 1;
+}
+
+const char* ConvertReg(int reg_code)
+{
+    switch (reg_code)
+    {
+        case RAX_CODE:
+            return "rax";
+
+        case RBX_CODE:
+            return "rbx";
+
+        case RCX_CODE:
+            return "rcx";
+
+        case RDX_CODE:
+            return "rdx";
+
+        default:
+        {
+            fprintf(stderr, "ERROR: Wrong register code\n");
+            exit(1);
+        }
+    }
+}
+
+void PrintArgs(char cmd, char* code, int* ip, FILE* file_out)
+{
+    if (cmd & ARG_MEM)
+        fprintf(file_out, "[");
+
+    if (cmd & ARG_IMMED)
+    {
+        fprintf(file_out, "%d ", *(code + (*ip)));
+        *ip += sizeof(int);
+    }
+
+    if ((cmd & ARG_IMMED) && (cmd & ARG_REG))
+        fprintf(file_out, "+ ");
+
+    if (cmd & ARG_REG)
+    {
+        fprintf(file_out, "%s ", ConvertReg(*(int*)(code + (*ip))));
+        *ip += sizeof(int);
+    }
+
+    if (cmd & ARG_MEM)
+    {
+        fseek(file_out, -1, SEEK_CUR);
+        fprintf(file_out, "]");
+    }
 }
 
 #undef ASSERT

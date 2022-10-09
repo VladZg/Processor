@@ -33,6 +33,7 @@ enum {
       WRNG_CMD_VERSION = -1,
 
       RAM_SIZE         = 100,
+      RAM_POISON       = 0xBAD,
 
       SYNTAX_ERR_CODE      = 1,
       DIV_ON_ZERO_ERR_CODE = 2,
@@ -56,6 +57,9 @@ enum {
       CMD_CODE_MASK    = 31
      };
 
-const float GET_RAM_DELAY = 0.5;
+const float GET_RAM_DELAY    = 1.5;
+const float MIN_CYCLE_DELAY  = 0.5;
+
+int START_REGS[5] = {0, 0, 0, 0, 0};
 
 #endif

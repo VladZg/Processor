@@ -15,6 +15,12 @@ const char  FILENAME_INPUT_DEFAULT[]  = "Source_default.txt";
 const char* FILENAME_INPUT            = nullptr;
 const char  FILENAME_OUTPUT[]         = "Source_output.asm";
 
+void   Compile (const char* filename_input, const char* filename_output);
+size_t IsArgs (const char* cmdname, char* cmdline);
+void   GetArg (char* cmdline, int* num_arg, int* reg_arg);
+int    SetCodes (char* cmdline, char** code, int* code_size, int* ip, int Cmd_code);
+void   CompilationError (size_t err_code);
+
 // struct Cmd {
 //             unsigned short mem    : 1;
 //             unsigned short reg    : 1;
@@ -22,104 +28,17 @@ const char  FILENAME_OUTPUT[]         = "Source_output.asm";
 //             unsigned short code   : 5;
 //             };
 
-size_t IsArgs(const char* cmdname, char* cmdline);
-void GetArg(char* cmdline, int* num_arg, int* reg_arg);
-int SetCodes(char* cmdline, char** code, int* code_size, int* ip, int Cmd_code);
-void CompilationError(size_t err_code);
 
 int main(int argc, char** argv)
 {
     if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
 
-    char** text = nullptr;
-    char*  data = nullptr;
-    int    text_lines_amount = 0;
-
-    FILE* file_out = fopen(FILENAME_OUTPUT, "wb");
-    ASSERT(file_out != NULL);
-
-    read_file_to_text(FILENAME_INPUT, &data, &text, &text_lines_amount);
-
-    char* code = (char*) calloc(9 * text_lines_amount, sizeof(char));
-    ASSERT(code != NULL);
-
-    int line = 0, ip = 0;
-
-    TechInfo tech_info = {
-                          CP_FILECODE,
-                          CMD_VERSION,
-                          0
-                         };
-
-    while (line < text_lines_amount)
-    {
-        char* cmd = (char*) calloc(strlen(text[line]), sizeof(char));
-        ASSERT(cmd != NULL);
-
-        sscanf(text[line], " %s", cmd);
-        char cmd_code = 0;
-        // Cmd cmd_code = {};
-
-        if (strcasecmp(cmd, "push") == 0)
-            cmd_code = SetCodes(text[line], &code, &tech_info.code_size, &ip, CMD_PUSH);
-
-        else if (strcasecmp(cmd, "pop") == 0)
-            cmd_code = SetCodes(text[line], &code, &tech_info.code_size, &ip, CMD_POP);
-
-        else if (strcasecmp(cmd, "add") == 0)
-            code[ip++] = cmd_code | CMD_ADD;
-
-        else if (strcasecmp(cmd, "sub") == 0)
-            code[ip++] = cmd_code | CMD_SUB;
-
-        else if (strcasecmp(cmd, "mul") == 0)
-            code[ip++] = cmd_code | CMD_MUL;
-
-        else if (strcasecmp(cmd, "div") == 0)
-            code[ip++] = cmd_code | CMD_DIV;
-
-        else if (strcasecmp(cmd, "out") == 0)
-            code[ip++] = cmd_code | CMD_OUT;
-
-        else if (strcasecmp(cmd, "pin") == 0)
-            code[ip++] = cmd_code | CMD_PIN;
-
-        else if (strcasecmp(cmd, "hlt") == 0)
-            code[ip++] = cmd_code | CMD_HLT;
-
-        else if (strcasecmp(cmd, "dump") == 0)
-            code[ip++] = cmd_code | CMD_DUMP;
-
-        else
-        {
-            fprintf(stderr, "    THERE IS NO COMMAND CALLED \"%s\" IN \"%d\" VERSION!!!\n"
-                            "    COMPILED FILE WILL BE DAMAGED!!!\n\n", cmd, CMD_VERSION);
-
-            tech_info.version = WRNG_CMD_VERSION;
-
-            fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
-
-            exit(1);
-        }
-
-        tech_info.code_size++;
-        free(cmd);
-        line++;
-    }
-
-    FILE* file1 = fopen("test.txt", "wb");
-
-    fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
-    fwrite((const void*) code, sizeof(char), tech_info.code_size, file_out);
-
-    fclose(file_out);
-    free(text);
-    free(data);
-    free(code);
+    Compile(FILENAME_INPUT, FILENAME_OUTPUT);
 
     return 0;
 }
+
 
 void CompilationError(size_t err_code)
 {
@@ -201,19 +120,19 @@ void GetArg(char* cmdline, int* num_arg, int* reg_arg)
 
 int SetCodes(char* cmdline, char** code, int* code_size, int* ip, int Cmd_code)
 {
-    int m1 = 0, m2 = 0;
+    int shift1 = 0, shift2 = 0;
     int is_mem_brack = 0;
 
-    sscanf(cmdline, "%*s %n[%n", &m1, &m2);
+    sscanf(cmdline, "%*s %n[%n", &shift1, &shift2);
 
-    if ((m2 - m1) == 1)
+    if ((shift2 - shift1) == 1)
     {
         is_mem_brack++;
-        cmdline += m2;
+        cmdline += shift2;
     }
 
     else
-        cmdline += m1;
+        cmdline += shift1;
 
     char cmd_code = 0;
     int  num_arg = 0;
@@ -271,4 +190,107 @@ int SetCodes(char* cmdline, char** code, int* code_size, int* ip, int Cmd_code)
     }
 
     return cmd_code;
+}
+
+void Compile(const char* filename_input, const char* filename_output)
+{
+    char** text = nullptr;
+    char*  data = nullptr;
+    int    text_lines_amount = 0;
+
+    FILE* file_out = fopen(filename_output, "wb");
+    ASSERT(file_out != NULL);
+
+    read_file_to_text(filename_input, &data, &text, &text_lines_amount);
+
+    char* code = (char*) calloc(9 * text_lines_amount, sizeof(char));
+    ASSERT(code != NULL);
+
+    int line = 0, ip = 0;
+
+    TechInfo tech_info = {
+                          CP_FILECODE,
+                          CMD_VERSION,
+                          0
+                         };
+
+    while (line < text_lines_amount)
+    {
+        char* cmd = (char*) calloc(strlen(text[line]), sizeof(char));
+        ASSERT(cmd != NULL);
+
+        sscanf(text[line], " %s", cmd);
+        char cmd_code = 0;
+        // Cmd cmd_code = {};
+
+        if (strcasecmp(cmd, "push") == 0)
+            cmd_code = SetCodes(text[line], &code, &tech_info.code_size, &ip, CMD_PUSH);
+
+        else if (strcasecmp(cmd, "pop") == 0)
+            cmd_code = SetCodes(text[line], &code, &tech_info.code_size, &ip, CMD_POP);
+
+        else if (strcasecmp(cmd, "add") == 0)
+            code[ip++] = cmd_code | CMD_ADD;
+
+        else if (strcasecmp(cmd, "sub") == 0)
+            code[ip++] = cmd_code | CMD_SUB;
+
+        else if (strcasecmp(cmd, "mul") == 0)
+            code[ip++] = cmd_code | CMD_MUL;
+
+        else if (strcasecmp(cmd, "div") == 0)
+            code[ip++] = cmd_code | CMD_DIV;
+
+        else if (strcasecmp(cmd, "out") == 0)
+            code[ip++] = cmd_code | CMD_OUT;
+
+        else if (strcasecmp(cmd, "pin") == 0)
+            code[ip++] = cmd_code | CMD_PIN;
+
+        else if (strcasecmp(cmd, "hlt") == 0)
+            code[ip++] = cmd_code | CMD_HLT;
+
+        else if (strcasecmp(cmd, "dump") == 0)
+        {
+            code[ip++] = cmd_code | CMD_DUMP;
+
+            int ip_min = 0, ip_max = 0;
+            int is_arg = sscanf(text[line], "%*s %d %d", &ip_min, &ip_max);
+
+            if ((is_arg < 1) || (ip_min >= ip_max))
+            {
+                ip_min = (char) -1;
+                ip_max = (char) -1;
+            }
+
+            code[ip++] = ip_min;
+            code[ip++] = ip_max;
+
+            tech_info.code_size += 2;
+        }
+
+        else
+        {
+            fprintf(stderr, "    THERE IS NO COMMAND CALLED \"%s\" IN \"%d\" VERSION!!!\n"
+                            "    COMPILED FILE WILL BE DAMAGED!!!\n\n", cmd, CMD_VERSION);
+
+            tech_info.version = WRNG_CMD_VERSION;
+
+            fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
+
+            exit(1);
+        }
+
+        tech_info.code_size++;
+        free(cmd);
+        line++;
+    }
+
+    fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
+    fwrite((const void*) code, sizeof(char), tech_info.code_size, file_out);
+
+    fclose(file_out);
+    free(text);
+    free(data);
+    free(code);
 }
