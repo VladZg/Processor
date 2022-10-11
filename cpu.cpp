@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "Stack/Stack.h"
+#include "Description.h"
 
 // #define NDUMP
 
@@ -56,6 +57,8 @@ int IsFridayToday();
 
 int main(int argc, char** argv)
 {
+    PrintHelp(argc, argv);
+
     if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
 
@@ -280,6 +283,9 @@ int DoCpuCycle(const char* filename_input)
 
         while (IP < cpu.code_size)
         {
+            fprintf(stderr, "  Processing");
+            PrintLoading(BETW_STEPS_DELAY);
+
             int cmd = CODE[IP];
 
             switch(cmd & CMD_CODE_MASK)

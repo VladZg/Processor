@@ -63,6 +63,7 @@ enum {
 const float GET_RAM_DELAY    = 1.0;
 const float MIN_CYCLE_DELAY  = 0.5;
 const float JUMP_DELAY       = 1.0;
+const float BETW_STEPS_DELAY = 0.5;
 
 const char  LBL_POISON_NAME[LBLNAME_MAXSIZE] = "LABEL POISON";
 const int   LBL_POISON_VALUE                 = 0xBAD;

@@ -6,6 +6,7 @@
 #include "Onegin/functions.h"
 #include "TechInfo.h"
 #include "CheckFile.h"
+#include "Description.h"
 
 #undef  FILENAME_INPUT
 #undef  FILENAME_OUTPUT
@@ -43,6 +44,8 @@ void   WriteListing(FILE* file, char* code, int ip, int n_args, size_t arg_size 
 
 int main(int argc, char** argv)
 {
+    PrintHelp(argc, argv);
+
     if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
 

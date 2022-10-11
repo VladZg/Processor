@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include "TechInfo.h"
 #include "CheckFile.h"
+#include "Description.h"
 
 #define  ASSERT( condition )                                                \
 {                                                                           \
@@ -27,6 +28,8 @@ int  Decompile(const char* filename_input, const char* filename_output);
 
 int main(int argc, char** argv)
 {
+    PrintHelp(argc, argv);
+
     if (!CheckFile(argc, argv, &FILENAME_INPUT))
         FILENAME_INPUT = FILENAME_INPUT_DEFAULT;
 
