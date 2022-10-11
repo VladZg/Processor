@@ -26,7 +26,7 @@ const char* ConvertReg(int reg_code);
 int  Decompile(const char* filename_input, const char* filename_output);
 
 
-int main(int argc, char** argv)
+int main(const int argc, const char** argv)
 {
     PrintHelp(argc, argv);
 

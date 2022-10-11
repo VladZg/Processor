@@ -42,7 +42,7 @@ void   WriteListing(FILE* file, char* code, int ip, int n_args, size_t arg_size 
 //             };
 
 
-int main(int argc, char** argv)
+int main(const int argc, const char** argv)
 {
     PrintHelp(argc, argv);
 

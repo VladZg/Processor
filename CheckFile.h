@@ -16,7 +16,7 @@ size_t IsFileExist(const char* filename)
     return 0;
 }
 
-size_t CheckFile(int argc, char** argv, const char** filename_input)
+size_t CheckFile(const int argc, const char** argv, const char** filename_input)
 {
     if (argc == 2)
     {

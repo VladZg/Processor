@@ -55,7 +55,7 @@ void FullDump     (Cpu* cpu, char ip_min, char ip_max);
 
 int IsFridayToday();
 
-int main(int argc, char** argv)
+int main(const int argc, const char** argv)
 {
     PrintHelp(argc, argv);
 

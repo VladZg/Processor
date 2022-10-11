@@ -47,7 +47,7 @@ void WriteCompilationInfo(const char* format_data, ...) {}
 
 #endif
 
-int main(int argc, char** argv)
+int main(const int argc, const char** argv)
 {
     if (!CheckFile(argc, argv, &source_file))
         source_file = SOURCE_FILE_DEFAULT;
