@@ -12,7 +12,7 @@ enum {
       CMD_DUMP         = 7,
       CMD_PIN          = 8,
       CMD_POP          = 9,
-      CMD_JUMP         = 10,
+      CMD_JMP          = 10,
       CMD_JB           = 11,
       CMD_JBE          = 12,
       CMD_JA           = 13,
@@ -54,11 +54,18 @@ enum {
       ARG_REG          = 64,
       ARG_MEM          = 128,
 
+      LBLS_MAXSIZE     = 5,
+      LBLNAME_MAXSIZE  = 20,
+
       CMD_CODE_MASK    = 31
      };
 
-const float GET_RAM_DELAY    = 1.5;
+const float GET_RAM_DELAY    = 1.0;
 const float MIN_CYCLE_DELAY  = 0.5;
+const float JUMP_DELAY       = 1.0;
+
+const char  LBL_POISON_NAME[LBLNAME_MAXSIZE] = "LABEL POISON";
+const int   LBL_POISON_VALUE                 = 0xBAD;
 
 int START_REGS[5] = {0, 0, 0, 0, 0};
 

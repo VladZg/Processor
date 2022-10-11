@@ -52,6 +52,7 @@ void RAMDump      (int* RAM);
 void RegsDump     (int* Regs);
 void FullDump     (Cpu* cpu, char ip_min, char ip_max);
 
+int IsFridayToday();
 
 int main(int argc, char** argv)
 {
@@ -63,6 +64,14 @@ int main(int argc, char** argv)
     return 0;
 }
 
+
+int IsFridayToday()
+{
+    time_t now        = time(0);
+    tm     *real_time = localtime(&now);
+
+    return abs(real_time->tm_wday - 2);
+}
 
 void CpuCtor(Cpu* cpu, int code_size, FILE* file)
 {
@@ -97,23 +106,7 @@ int* GetRAM(Cpu* cpu, int index)
 {
     fprintf(stderr, "  Getting RAM[%d] value", index);
 
-    int n_cycles = (int) (GET_RAM_DELAY / MIN_CYCLE_DELAY);
-
-    struct timespec t_r = {0, (int) (MIN_CYCLE_DELAY / 2 / 3 * 1000000000)};
-    struct timespec t_w;
-
-    for (int i = 0; i < n_cycles; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            nanosleep(&t_r, &t_w);
-            fprintf(stderr, ".");
-            nanosleep(&t_r, &t_w);
-        }
-        fprintf(stderr, "\b\b\b   \b\b\b");
-    }
-
-    fprintf(stderr, "\r                                \r");
+    PrintLoading(GET_RAM_DELAY);
 
     return &cpu->RAM[index];
 }
@@ -458,6 +451,137 @@ int DoCpuCycle(const char* filename_input)
                     SimpleStackDump(&STACK);
 
                     IP++;
+
+                    break;
+                }
+
+                case CMD_JMP:
+                {
+                    IP++;
+
+                    fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                    PrintLoading(JUMP_DELAY);
+
+                    IP = CODE[IP];
+
+                    break;
+                }
+
+                case CMD_JB:
+                {
+                    IP++;
+
+                    if (StackPop(&STACK) > StackPop(&STACK))
+                    {
+                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                        PrintLoading(JUMP_DELAY);
+
+                        IP = CODE[IP];
+                    }
+
+                    else IP += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_JBE:
+                {
+                    IP++;
+
+                    if (StackPop(&STACK) >= StackPop(&STACK))
+                    {
+                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                        PrintLoading(JUMP_DELAY);
+
+                        IP = CODE[IP];
+                    }
+
+                    else IP += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_JA:
+                {
+                    IP++;
+
+                    if (StackPop(&STACK) < StackPop(&STACK))
+                    {
+                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                        PrintLoading(JUMP_DELAY);
+
+                        IP = CODE[IP];
+                    }
+
+                    else IP += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_JAE:
+                {
+                    IP++;
+
+                   if (StackPop(&STACK) <= StackPop(&STACK))
+                    {
+                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                        PrintLoading(JUMP_DELAY);
+
+                        IP = CODE[IP];
+                    }
+
+                    else IP += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_JE:
+                {
+                    IP++;
+
+                    if (StackPop(&STACK) == StackPop(&STACK))
+                    {
+                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                        PrintLoading(JUMP_DELAY);
+
+                        IP = CODE[IP];
+                    }
+
+                    else IP += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_JNE:
+                {
+                    IP++;
+
+                    if (StackPop(&STACK) != StackPop(&STACK))
+                    {
+                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                        PrintLoading(JUMP_DELAY);
+
+                        IP = CODE[IP];
+                    }
+
+                    else IP += sizeof(int);
+
+                    break;
+                }
+
+                case CMD_JF:
+                {
+                    IP++;
+
+                    if (IsFridayToday())
+                    {
+                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
+                        PrintLoading(JUMP_DELAY);
+
+                        IP = CODE[IP];
+                    }
+
+                    else IP += sizeof(int);
 
                     break;
                 }

@@ -149,6 +149,116 @@ int Decompile(const char* filename_input, const char* filename_output)
                     break;
                 }
 
+                case CMD_JMP:
+                {
+                    ip++;
+                    fprintf(file_out, "Jmp ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+
+                    ip += sizeof(int);
+
+                    fprintf(file_out, "\n");
+
+                    break;
+                }
+
+                case CMD_JB:
+                {
+                    ip++;
+
+                    fprintf(file_out, "Jb ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+
+                    ip += sizeof(int);
+
+                    fprintf(file_out, "\n");
+
+                    break;
+                }
+
+                case CMD_JBE:
+                {
+                    ip++;
+
+                    fprintf(file_out, "Jbe ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+
+                    ip += sizeof(int);
+
+                    fprintf(file_out, "\n");
+
+                    break;
+                }
+
+                case CMD_JA:
+                {
+                    ip++;
+
+                    fprintf(file_out, "Ja ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+
+                    ip += sizeof(int);
+
+                    fprintf(file_out, "\n");
+
+                    break;
+                }
+
+                case CMD_JAE:
+                {
+                    ip++;
+
+                    fprintf(file_out, "Jae ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+
+                    ip += sizeof(int);
+
+                    fprintf(file_out, "\n");
+
+                    break;
+                }
+
+                case CMD_JE:
+                {
+                    ip++;
+
+                    fprintf(file_out, "Je ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+
+                    ip += sizeof(int);
+
+                    fprintf(file_out, "\n");
+
+                    break;
+                }
+
+                case CMD_JNE:
+                {
+                    ip++;
+
+                    fprintf(file_out, "Jne ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+
+                    ip += sizeof(int);
+
+                    fprintf(file_out, "\n");
+
+                    break;
+                }
+
+                case CMD_JF:
+                {
+                    ip++;
+
+                    fprintf(file_out, "Jf ");
+                    fprintf(file_out, "%d ", *(int*)(code + ip));
+                    fprintf(file_out, "\n");
+
+                    ip += sizeof(int);
+
+                    break;
+                }
+
                 default:
                 {
                     fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", code[ip], FILENAME_INPUT);
