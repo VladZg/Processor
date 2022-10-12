@@ -62,7 +62,6 @@ int main(const int argc, const char** argv)
     // PrintLabels();
 
     Compile(FILENAME_INPUT, FILENAME_OUTPUT);
-    compilations_amnt++;
 
     // PrintLabels();
 
@@ -174,9 +173,9 @@ void GetArg(char* cmdline, int* num_arg, int* reg_arg)
 {
     int arg1_shift = 0;   // arg1_shift - сдвиг первого аргумента отн начала строки
     int arg2_shift = 0;   // arg2_shift - 0, если нет второго аргумента, если есть - то это сдвиг от начала
-    char* arg2 = NULL;
+    char* arg2 = nullptr;
     int num1 = 0, num2 = 0;
-    char* reg = NULL;
+    char* reg = nullptr;
 
     int k = sscanf(cmdline, "%d + %n%*s", &num1, &arg2_shift); // k отвечает за то, есть ли 1й числовой аргумент
 

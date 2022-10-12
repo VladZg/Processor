@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 // #define RELEASE_MODE
-// #define NDEBUG
+#define NDEBUG
 #define NLOGGING
 // #define N_HASH_PROTECTION
 // #define N_CANARY_PROTECTION

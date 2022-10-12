@@ -41,6 +41,9 @@ int main(const int argc, const char** argv)
 
 int Decompile(const char* filename_input, const char* filename_output)
 {
+    ASSERT(filename_input != NULL)
+    ASSERT(filename_output != NULL)
+
     FILE* file_inp = fopen(FILENAME_INPUT, "rb");
     ASSERT(file_inp != NULL);
 
@@ -324,6 +327,10 @@ const char* ConvertReg(int reg_code)
 
 void PrintArgs(char cmd, char* code, int* ip, FILE* file_out)
 {
+    ASSERT(code != NULL)
+    ASSERT(ip != NULL)
+    ASSERT(file_out != NULL)
+
     if (cmd & ARG_MEM)
         fprintf(file_out, "[");
 

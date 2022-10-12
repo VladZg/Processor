@@ -6,11 +6,16 @@
 #include "Stack/Stack.h"
 #include "Description.h"
 
-// #define NDUMP
+#define NDUMP
 
 #include "CpuGraphics.h"
 #include "TechInfo.h"
 #include "CheckFile.h"
+
+#ifdef NDEBUG
+#undef ASSERT
+#define ASSERT(condition) {}
+#endif
 
 // #define PATRIOTIC_CPU
 #ifdef PATRIOTIC_CPU
@@ -39,21 +44,20 @@ struct Cpu
 #define CODE  cpu.code
 #define STACK cpu.stack
 
+void CpuCtor    (Cpu* cpu, int code_size, FILE* file);
+void CpuCleaner (Cpu* cpu);
+void CpuError   (Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...);
 int  DoCpuCycle (const char* filename_input);
 
 int* GetArg     (Cpu* cpu, int cmd, int* arg);
 int* GetRAM     (Cpu* cpu, int index);
 
-void CpuCtor    (Cpu* cpu, int code_size, FILE* file);
-void CpuCleaner (Cpu* cpu);
-void CpuError   (Cpu* cpu, FILE* file, int err_code);
+int IsFridayToday();
 
 void PrintCmdName (const char* cmd);
 void RAMDump      (int* RAM);
 void RegsDump     (int* Regs);
 void FullDump     (Cpu* cpu, char ip_min, char ip_max);
-
-int IsFridayToday();
 
 int main(const int argc, const char** argv)
 {
@@ -67,17 +71,19 @@ int main(const int argc, const char** argv)
     return 0;
 }
 
-
 int IsFridayToday()
 {
     time_t now        = time(0);
     tm     *real_time = localtime(&now);
 
-    return abs(real_time->tm_wday - 2);
+    return !abs(real_time->tm_wday - 5);
 }
 
 void CpuCtor(Cpu* cpu, int code_size, FILE* file)
 {
+    ASSERT(cpu != NULL);
+    ASSERT(file != NULL);
+
     cpu->Regs = START_REGS;
 
     cpu->code_size = code_size;
@@ -100,6 +106,8 @@ void CpuCtor(Cpu* cpu, int code_size, FILE* file)
 
 void CpuCleaner(Cpu* cpu)
 {
+    ASSERT(cpu != NULL);
+
     StackDtor(&cpu->stack);
     free(cpu->RAM);
     free(cpu->code);
@@ -107,8 +115,9 @@ void CpuCleaner(Cpu* cpu)
 
 int* GetRAM(Cpu* cpu, int index)
 {
-    fprintf(stderr, "  Getting RAM[%d] value", index);
+    ASSERT(cpu != NULL);
 
+    fprintf(stderr, "  Getting RAM[%d] value", index);
     PrintLoading(GET_RAM_DELAY);
 
     return &cpu->RAM[index];
@@ -116,7 +125,8 @@ int* GetRAM(Cpu* cpu, int index)
 
 int* GetArg(Cpu* cpu, int cmd, int* arg)
 {
-    // fprintf(stderr, "1: %d %d %d %d\n", cmd, cmd & ARG_IMMED, cmd & ARG_REG, cmd & ARG_MEM);
+    ASSERT(cpu != NULL);
+    ASSERT(arg != NULL)
 
     if (cmd & ARG_IMMED)
     {
@@ -131,9 +141,15 @@ int* GetArg(Cpu* cpu, int cmd, int* arg)
     }
 
     if (cmd & ARG_MEM)
-        arg = GetRAM(cpu, *arg);
+    {
+        if ((*arg <= RAM_SIZE) && (*arg >= 0))
+            arg = GetRAM(cpu, *arg);
 
-    // fprintf(stderr, "\n2: %d\n", *arg);
+        else CpuError(cpu, stderr, ARG_ERR_CODE, "ARGUMENT OF PUSH IS WRONG, "
+                                                 "ITS INDEX (%d) OUT OF RAM RANGE", *arg);
+
+        // arg = GetRAM(cpu, *arg);
+    }
 
     return arg;
 }
@@ -142,11 +158,15 @@ int* GetArg(Cpu* cpu, int cmd, int* arg)
 
 void PrintCmdName(const char* cmd)
 {
-    fprintf(stderr, KRED "  %s:\n" KNRM, cmd);
+    ASSERT(cmd != NULL);
+
+    fprintf(stderr, KRED "  %s\n" KNRM, cmd);
 }
 
 void RAMDump(int* RAM)
 {
+    ASSERT(RAM != NULL);
+
     fprintf(stderr, "    RAM (not empty cells):\n    {\n");
 
     int count_empties = 0;
@@ -169,6 +189,8 @@ void RAMDump(int* RAM)
 
 void RegsDump(int* Regs)
 {
+    ASSERT(Regs != NULL);
+
     fprintf(stderr, "    Registers:\n    {\n");
 
     for (int i = 1; i <= REGS_SIZE; i++)
@@ -179,14 +201,16 @@ void RegsDump(int* Regs)
 
 void FullDump(Cpu* cpu, char ip_min, char ip_max)
 {
+    ASSERT(cpu != NULL);
+
     size_t ip_now = cpu->ip;
 
     if ((ip_min != -1) && (ip_max <= cpu->code_size - 1))
-        fprintf(stderr, KRED "  Dump (ip: %d -> %d):\n" KNRM, ip_min, ip_max);
+        fprintf(stderr, "  \\\\ip: %d -> %d)\n", ip_min, ip_max);
 
     else
     {
-        fprintf(stderr, "  Dump (full code):\n");
+        fprintf(stderr, "  \\\\full code\n");
         ip_min = 0;
         ip_max = cpu->code_size - 1;
     }
@@ -249,19 +273,21 @@ void FullDump(Cpu* cpu, char ip_min, char ip_max) {}
 
 #endif
 
-void CpuError(Cpu* cpu, FILE* file, int err_code)
+void CpuError(Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...)
 {
-    switch(err_code)
-    {
-        case DIV_ON_ZERO_ERR_CODE:
-        {
-            fprintf(stderr, "  ERROR: Division on zero");
+    ASSERT(cpu != NULL);
+    ASSERT(file != NULL);
+    ASSERT(fmt_err_msg != NULL);
 
-            break;
-        }
-    }
+    fprintf(stderr, KYEL "    ERROR (%d): \n    ", err_code);
 
-    fprintf(stderr, " in line (? эта функция пока недоступна, ха-ха)\n");
+    va_list args;
+    va_start(args, fmt_err_msg);
+
+    vfprintf(stderr, fmt_err_msg, args);
+    fprintf(stderr, KNRM KMAG "\n\n  PROGRAM STOPPED!!!\n" KNRM);
+
+    va_end(args);
 
     CpuCleaner(cpu);
     fclose(file);
@@ -270,6 +296,8 @@ void CpuError(Cpu* cpu, FILE* file, int err_code)
 
 int DoCpuCycle(const char* filename_input)
 {
+    ASSERT(filename_input != NULL);
+
     FILE* file = fopen(filename_input, "rb");
     ASSERT(file != NULL);
 
@@ -281,6 +309,27 @@ int DoCpuCycle(const char* filename_input)
         Cpu cpu = {};
         CpuCtor(&cpu, tech_info.code_size, file);
 
+        #define DEF_CMD(name, num, arg, ...)                                   \
+            case CMD_##name:                                                   \
+                PrintCmdName(#name);                                           \
+                IP++;                                                          \
+                __VA_ARGS__                                                    \
+                break;
+
+        #define DEF_JMP(name, num, ...)                                        \
+            DEF_CMD(name, num, 1,                                              \
+            {                                                                  \
+                if (__VA_ARGS__)                                               \
+                {                                                              \
+                    fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]); \
+                    PrintLoading(JUMP_DELAY);                                  \
+                                                                               \
+                    IP = CODE[IP];                                             \
+                }                                                              \
+                                                                               \
+                else IP += sizeof(int);                                        \
+            })
+
         while (IP < cpu.code_size)
         {
             fprintf(stderr, "  Processing");
@@ -290,366 +339,31 @@ int DoCpuCycle(const char* filename_input)
 
             switch(cmd & CMD_CODE_MASK)
             {
-                case CMD_PUSH:
-                {
-                    PrintCmdName("Push");
-
-                    int arg_temp = 0;
-                    IP++;
-                    int* arg = GetArg(&cpu, cmd, &arg_temp);
-
-                    if (*arg != RAM_POISON)
-                        StackPush(&STACK, *arg);
-
-                    else
-                    {
-                        fprintf(stderr, "    ERROR: ARGUMENT OF PUSH IS POISONED ELEM FROM THE RAM\n");
-
-                        CpuCleaner(&cpu);
-                        fclose(file);
-
-                        exit(1);
-                    }
-
-                    SimpleStackDump(&STACK);
-
-                    break;
-                }
-
-                case CMD_POP:
-                {
-                    PrintCmdName("Pop");
-
-                    int arg_temp = 0;
-                    int* arg = 0;
-
-                    IP++;
-
-                    if (cmd & ARG_MEM)
-                    {
-                        cmd &= ~ARG_MEM;
-                        arg = GetArg(&cpu, cmd, &arg_temp);
-
-                        if ((*arg <= RAM_SIZE) && (*arg >= 0))
-                            arg = GetRAM(&cpu, *arg);
-
-                        else
-                        {
-                            fprintf(stderr, "  ERROR: ARGUMENT OF POP (%d) IS OUT OF RAM RANGE\n", *arg);
-                            CpuCleaner(&cpu);
-                            exit(1);
-                        }
-                    }
-
-                    else if ((cmd & ARG_REG) && !(cmd & ARG_IMMED))
-                    {
-                        arg = &cpu.Regs[CODE[IP]];
-                        IP += sizeof(int);
-                    }
-
-                    else
-                    {
-                        fprintf(stderr, "Wrong type of argument\n");
-                        exit(1);
-                    }
-
-                    *arg = StackPop(&STACK);
-
-                    SimpleStackDump(&STACK);
-                    RegsDump(cpu.Regs);
-                    RAMDump(cpu.RAM);
-
-                    break;
-                }
-
-                case CMD_ADD:
-                {
-                    PrintCmdName("Add");
-
-                    StackPush(&STACK, StackPop(&STACK) + StackPop(&STACK));
-
-                    SimpleStackDump(&STACK);
-
-                    IP++;
-
-                    break;
-                }
-
-                case CMD_SUB:
-                {
-                    PrintCmdName("Sub");
-
-                    int num = StackPop(&STACK);
-
-                    StackPush(&STACK, StackPop(&STACK) - num);
-
-                    SimpleStackDump(&STACK);
-
-                    IP++;
-
-                    break;
-                }
-
-                case CMD_MUL:
-                {
-                    PrintCmdName("Mul");
-
-                    StackPush(&STACK, StackPop(&STACK) * StackPop(&STACK));
-
-                    SimpleStackDump(&STACK);
-
-                    IP++;
-
-                    break;
-                }
-
-                case CMD_DIV:
-                {
-                    PrintCmdName("Div");
-
-                    int num = StackPop(&STACK);
-
-                    if (num)
-                    {
-                        StackPush(&STACK, StackPop(&STACK) / num);
-
-                        SimpleStackDump(&STACK);
-
-                        IP++;
-                    }
-
-                    else
-                        CpuError(&cpu, file, DIV_ON_ZERO_ERR_CODE);
-
-                    break;
-                }
-
-                case CMD_OUT:
-                {
-                    PrintCmdName("Out");
-
-                    int popped = StackPop(&STACK);
-
-                    SimpleStackDump(&STACK);
-
-                    fprintf(stderr, "    %d ", popped);
-
-                    if (popped == RAM_POISON) fprintf(stderr, KGRN "(RAM poison)" KNRM);
-
-                    fprintf(stderr, "\n\n");
-
-                    IP++;
-
-                    break;
-                }
-
-                case CMD_PIN:
-                {
-                     PrintCmdName("Pin");
-
-                    int num = 0;
-
-                    fprintf(stderr, "  Type a number, it'll be used in calculatings: ");
-                    scanf("%d", &num);
-
-                    StackPush(&STACK, num);
-
-                    SimpleStackDump(&STACK);
-
-                    IP++;
-
-                    break;
-                }
-
-                case CMD_JMP:
-                {
-                    IP++;
-
-                    fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                    PrintLoading(JUMP_DELAY);
-
-                    IP = CODE[IP];
-
-                    break;
-                }
-
-                case CMD_JB:
-                {
-                    IP++;
-
-                    if (StackPop(&STACK) > StackPop(&STACK))
-                    {
-                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                        PrintLoading(JUMP_DELAY);
-
-                        IP = CODE[IP];
-                    }
-
-                    else IP += sizeof(int);
-
-                    break;
-                }
-
-                case CMD_JBE:
-                {
-                    IP++;
-
-                    if (StackPop(&STACK) >= StackPop(&STACK))
-                    {
-                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                        PrintLoading(JUMP_DELAY);
-
-                        IP = CODE[IP];
-                    }
-
-                    else IP += sizeof(int);
-
-                    break;
-                }
-
-                case CMD_JA:
-                {
-                    IP++;
-
-                    if (StackPop(&STACK) < StackPop(&STACK))
-                    {
-                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                        PrintLoading(JUMP_DELAY);
-
-                        IP = CODE[IP];
-                    }
-
-                    else IP += sizeof(int);
-
-                    break;
-                }
-
-                case CMD_JAE:
-                {
-                    IP++;
-
-                   if (StackPop(&STACK) <= StackPop(&STACK))
-                    {
-                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                        PrintLoading(JUMP_DELAY);
-
-                        IP = CODE[IP];
-                    }
-
-                    else IP += sizeof(int);
-
-                    break;
-                }
-
-                case CMD_JE:
-                {
-                    IP++;
-
-                    if (StackPop(&STACK) == StackPop(&STACK))
-                    {
-                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                        PrintLoading(JUMP_DELAY);
-
-                        IP = CODE[IP];
-                    }
-
-                    else IP += sizeof(int);
-
-                    break;
-                }
-
-                case CMD_JNE:
-                {
-                    IP++;
-
-                    if (StackPop(&STACK) != StackPop(&STACK))
-                    {
-                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                        PrintLoading(JUMP_DELAY);
-
-                        IP = CODE[IP];
-                    }
-
-                    else IP += sizeof(int);
-
-                    break;
-                }
-
-                case CMD_JF:
-                {
-                    IP++;
-
-                    if (IsFridayToday())
-                    {
-                        fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]);
-                        PrintLoading(JUMP_DELAY);
-
-                        IP = CODE[IP];
-                    }
-
-                    else IP += sizeof(int);
-
-                    break;
-                }
-
-                case CMD_HLT:
-                {
-                    PrintCmdName("Hlt");
-
-                    fprintf(stderr, "    Program \"%s\" has finished correctly\n", FILENAME_INPUT);
-
-                    CpuCleaner(&cpu);
-                    fclose(file);
-
-                    return 1;
-                }
-
-                case CMD_DUMP:
-                {
-                    char ip_min = CODE[IP + 1];
-                    char ip_max = CODE[IP + 2];
-
-                    FullDump(&cpu, ip_min, ip_max);
-
-                    IP += 3;
-
-                    break;
-                }
+                #include "Cmd.h"
 
                 default:
-                {
-                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", CODE[IP], FILENAME_INPUT);
-
-                    CpuCleaner(&cpu);
-                    fclose(file);
-
-                    exit(1);
-                }
+                    CpuError(&cpu, file, SYNTAX_ERR_CODE, "  NO SUCH COMMAND WITH CODE %d\n"
+                                                          "  FILE \"%s\" IS DAMAGED!!!", CODE[IP], FILENAME_INPUT);
             }
         }
 
+        #undef DEF_JMP
+        #undef DEF_CMD
+
         CpuCleaner(&cpu);
         fclose(file);
+
+        return 1;
     }
 
     else if (tech_info.filecode != CP_FILECODE)
-    {
-        fprintf(stderr, "  WRONG TYPE OF ASM FILE!!!\n  YOU HAVE TO USE CP_FILECODE \"%d\"\n", CP_FILECODE);
-
-        fclose(file);
-
-        exit(1);
-    }
+        fprintf(stderr, KYEL "  WRONG TYPE OF ASM FILE!!!\n"
+                             "  YOU HAVE TO USE CP_FILECODE \"%d\"\n" KNRM, CP_FILECODE);
 
     else if (tech_info.version != CMD_VERSION)
-    {
-        fprintf(stderr, "  USED OLD (\"%d\") VERSION OF COMMANDS!!!\n  YOU HAVE TO USE THE \"%d\" VERSION!!!\n",
-                tech_info.version, CMD_VERSION);
+        fprintf(stderr, KYEL "  USED OLD (\"%d\") VERSION OF COMMANDS!!!\n"
+                             "  YOU HAVE TO USE THE \"%d\" VERSION!!!\n" KNRM, tech_info.version, CMD_VERSION);
 
-        fclose(file);
-
-        exit(1);
-    }
-
-    return 0;
+    fclose(file);
+    exit(1);
 }

@@ -52,66 +52,56 @@ int main(const int argc, const char** argv)
     if (!CheckFile(argc, argv, &source_file))
         source_file = SOURCE_FILE_DEFAULT;
 
-    struct stat buff_source, buff_asm, buff_cpu, buff_disasm, buff_source_out;
+    int is_file_changed  = 0;
 
-    size_t source_chng_time = 0, asm_chng_time = 0, cpu_chng_time = 0, disasm_chng_time = 0, source_out_chng_time = 0;
-    int    is_file_changed  = 0;
+    size_t* buff_in = (size_t*) calloc(sizeof(size_t), 4);
+    struct stat* buff = (struct stat*) calloc(sizeof(struct stat), 4);
 
-    fread(&asm_chng_time,        sizeof(size_t), 1, filesinfo_file);
-    fread(&cpu_chng_time,        sizeof(size_t), 1, filesinfo_file);
-    fread(&disasm_chng_time,     sizeof(size_t), 1, filesinfo_file);
-    fread(&source_chng_time,     sizeof(size_t), 1, filesinfo_file);
-    fread(&source_out_chng_time, sizeof(size_t), 1, filesinfo_file);
-
+    fread(buff_in, sizeof(size_t), 4, filesinfo_file);
     fseek(filesinfo_file, 0, SEEK_SET);
 
-    stat(ASM_FILE,       &buff_asm);
-    stat(CPU_FILE,       &buff_cpu);
-    stat(DISASM_FILE,    &buff_disasm);
-    stat(SOURCE_FILE,    &buff_source);
-    stat(SOURCE_FILE,    &buff_source_out);
+    stat(ASM_FILE,       buff);
+    stat(CPU_FILE,       buff + 1);
+    stat(DISASM_FILE,    buff + 2);
+    stat(SOURCE_FILE,    buff + 3);
 
-    fwrite(&buff_asm.st_mtime,        sizeof(size_t), 1, filesinfo_file);
-    fwrite(&buff_cpu.st_mtime,        sizeof(size_t), 1, filesinfo_file);
-    fwrite(&buff_disasm.st_mtime,     sizeof(size_t), 1, filesinfo_file);
-    fwrite(&buff_source.st_mtime,     sizeof(size_t), 1, filesinfo_file);
-    fwrite(&buff_source_out.st_mtime, sizeof(size_t), 1, filesinfo_file);
+    size_t* buff_out = (size_t*) calloc(sizeof(size_t), 4);
+
+    for (int i = 0; i < 5; i++)
+        buff_out[i] = buff[i].st_mtime;
+
+    fwrite(buff_out, sizeof(size_t), 4, filesinfo_file);
 
     WriteCompilationInfo("\"%s\":\n", __FILE__);
 
-    if (asm_chng_time - buff_asm.st_mtime)  // перекомпиляция "asm.cpp", если файл изменился
+    if (buff_in[0] - buff_out[0])  // перекомпиляция "asm.cpp", если файл изменился
     {
         system("g++ asm.cpp Onegin/functions.cpp -o asm");
         WriteCompilationInfo("  File \"%s\" was recompiled\n", ASM_FILE);
         is_file_changed++;
     }
 
-    if (cpu_chng_time - buff_cpu.st_mtime)  // перекомпиляция "cpu.cpp", если файл изменился
+    if (buff_in[1] - buff_out[1])  // перекомпиляция "cpu.cpp", если файл изменился
     {
         system("g++ cpu.cpp Stack/Stack.cpp Stack/HashCounters.cpp Stack/Log.cpp Onegin/functions.cpp -o cpu");
         WriteCompilationInfo("  File \"%s\" was recompiled\n", CPU_FILE);
         is_file_changed++;
     }
 
-    if (disasm_chng_time - buff_disasm.st_mtime)  // перекомпиляция "disasm.cpp" если файл изменился
+    if (buff_in[2] - buff_out[2])  // перекомпиляция "disasm.cpp" если файл изменился
     {
         system("g++ disasm.cpp -o disasm");
         WriteCompilationInfo("  File \"%s\" was recompiled\n", DISASM_FILE);
         is_file_changed++;
     }
 
-    if (source_chng_time - buff_source.st_mtime)  // перекомпиляция, если файл "Source.txt" изменился
+    if (buff_in[3] - buff_out[3])  // перекомпиляция, если файл "Source.txt" изменился
     {
         system("./asm " SOURCE_FILE);
         WriteCompilationInfo("  File \"%s\" was recompiled\n", SOURCE_FILE);
-        is_file_changed++;
-    }
-
-    if (source_out_chng_time - buff_source_out.st_mtime)  // перекомпиляция, если файл "Source.txt" изменился
-    {
         system("./disasm " SOURCE_ASM_FILE);
         WriteCompilationInfo("  File \"%s\" was redisassemblered\n", SOURCE_ASM_FILE);
-        is_file_changed++;
+        is_file_changed += 2;
     }
 
     fclose(filesinfo_file);
@@ -124,6 +114,10 @@ int main(const int argc, const char** argv)
     WriteCompilationInfo("\"cpu\":\n");
 
     system("./cpu " SOURCE_ASM_FILE);
+
+    free(buff_in);
+    free(buff);
+    free(buff_out);
 
     return 0;
 }
