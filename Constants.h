@@ -1,10 +1,13 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define DEF_CMD(name, num, ...) \
+#define DEF_CMD(name, num, ...)  \
             CMD_##name = num,
 
-#define DEF_JMP(name, num, ...) \
+#define DEF_JMP(name, num, ...)  \
+            DEF_CMD(name, num)
+
+#define DEF_DUMP(name, num, ...) \
             DEF_CMD(name, num)
 
 enum Comands      //автогенерация enuma команд
@@ -12,6 +15,7 @@ enum Comands      //автогенерация enuma команд
       #include "Cmd.h"
 };
 
+#undef DEF_DUMP
 #undef DEF_JMP
 #undef DEF_CMD
 
@@ -32,6 +36,8 @@ enum ErrCodes
       DIV_ON_ZERO_ERR_CODE = 2,
       ARG_TYPE_ERR_CODE    = 3,
       ARG_ERR_CODE         = 4,
+      CMD_ERR_CODE         = 5,
+      LBL_ERR_CODE         = 6,
 };
 
 int START_REGS[5] = {0, 0, 0, 0, 0};
@@ -52,6 +58,12 @@ enum RAMInfo
       RAM_POISON = 0xBAD,
 };
 
+enum LabelsInfo
+{
+      LBLS_MAXSIZE     = 5,
+      LBLNAME_MAXSIZE  = 20,
+};
+
 enum OtherInfo
 {
       CP_FILECODE      = 1337,
@@ -59,9 +71,6 @@ enum OtherInfo
       WRNG_CMD_VERSION = -1,
 
       TECH_INFO_SIZE   = 3,
-
-      LBLS_MAXSIZE     = 5,
-      LBLNAME_MAXSIZE  = 20,
 
       CMD_CODE_MASK    = 31,
 };
@@ -71,8 +80,8 @@ const int   LBL_POISON_VALUE                 = 0xBAD;
 
 // DelaysInfo
 const float GET_RAM_DELAY    = 1.0;
-const float JUMP_DELAY       = 0.5;
-const float BETW_STEPS_DELAY = 0.0;
+const float JUMP_DELAY       = 1.5;
+const float BETW_STEPS_DELAY = 0.5;
 const float MIN_CYCLE_DELAY  = 0.5;
 
 #endif

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <cstring>
+#include <stdarg.h>
 #include "Stack/ColourConsts.h"
 #include "Constants.h"
 #include "Stack/Stack.h"
@@ -27,8 +28,19 @@ void WriteNSymb(size_t n, char symb)
         fprintf(stderr, "%c", symb);
 }
 
-void PrintLoading(float delay)
+#ifdef DELAYS_MODE
+
+void PrintLoading(float delay, const char* fmt_msg, ...)
 {
+    ASSERT(fmt_msg != NULL);
+
+    va_list args;
+    va_start(args, fmt_msg);
+
+    vfprintf(stderr, fmt_msg, args);
+
+    va_end(args);
+
     int n_cycles = (int) (delay / MIN_CYCLE_DELAY);
 
     struct timespec t_r = {0, (int) (MIN_CYCLE_DELAY / 2 / 3 * 1000000000)};
@@ -44,9 +56,14 @@ void PrintLoading(float delay)
         }
         fprintf(stderr, "\b\b\b   \b\b\b");
     }
-
     fprintf(stderr, "\r                                                     \r");
 }
+
+#else
+
+void PrintLoading(float delay, const char* fmt_msg, ...) {}
+
+#endif
 
 int PrintRusFlag()
 {

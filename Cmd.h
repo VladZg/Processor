@@ -70,13 +70,7 @@ DEF_CMD (OUT,  6,  0,
         fprintf(stderr, "\n\n");
     })
 
-DEF_CMD (DUMP, 7,  1,
-    {
-        char ip_min = CODE[IP++];
-        char ip_max = CODE[IP++];
-
-        FullDump(&cpu, ip_min, ip_max);
-    })
+DEF_DUMP (DUMP, 7)
 
 DEF_CMD (PIN,  8,  0,
     {
@@ -140,3 +134,24 @@ DEF_JMP (JE,   15, StackPop(&STACK) == StackPop(&STACK))
 DEF_JMP (JNE,  16, StackPop(&STACK) != StackPop(&STACK))
 
 DEF_JMP (JF,   17, IsFridayToday())
+
+
+// функции для приколов: ниже
+
+DEF_CMD (RUSSIA, 18, 0,
+{
+    int RUSSIA = PrintRusFlag();
+    fprintf(stderr, "  MEOW\n\n");
+})
+
+DEF_CMD (PRINT, 19, 1,
+{
+    int arg_temp = 0;
+    int* arg = GetArg(&cpu, cmd, &arg_temp);
+    fprintf(stderr, "    ARGUMENT: %d ", *arg);
+
+    if (*arg == RAM_POISON)
+        fprintf(stderr, "(RAM POISONED)");
+
+    fprintf(stderr, "\n\n");
+})

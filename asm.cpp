@@ -1,7 +1,10 @@
 #include "Constants.h"
+#include "Stack/Config.h"
+#include "Stack/ColourConsts.h"
 #include <stdio.h>
 #include <string.h>
 #include <cstdlib>
+#include <stdarg.h>
 #include "Onegin/defines.h"
 #include "Onegin/functions.h"
 #include "TechInfo.h"
@@ -22,16 +25,19 @@ Label* labels;
 int    compilations_amnt;
 
 void   Compile (const char* filename_input, const char* filename_output);
+void   CompilationError(FILE* file, int err_code, const char* fmt_err_msg, ...);
+
 void   LablesCtor(Label* labels);
 void   LablesCleaner(Label* labels);
 int    IsLabel(char* name);
 int    LabelValue(char* name);
+void   PrintLabels();
+
 size_t IsArgs (const char* cmdname, char* cmdline);
 void   GetArg (char* cmdline, int* num_arg, int* reg_arg);
 int    SetCodes (char* cmdline, char** code, int* code_size, int* ip, int Cmd_code);
 int    SetJumpCode(char* cmdline, char** code, int* code_size, int* ip, int Cmd_code);
-void   CompilationError (size_t err_code);
-void   PrintLabels();
+
 void   WriteListing(FILE* file, char* code, int ip, int n_args, size_t arg_size = sizeof(int));
 
 // struct Cmd {
@@ -83,16 +89,23 @@ void PrintLabels()
     fprintf(stderr, "  }\n\n");
 }
 
-void CompilationError(size_t err_code)
+void CompilationError(FILE* file, int err_code, const char* fmt_err_msg, ...)
 {
-    switch (err_code)
-    {
-        case SYNTAX_ERR_CODE:
-        {
-            fprintf(stderr,"  SyntaxError\n");
-            break;
-        }
-    }
+    ASSERT(file != NULL);
+    ASSERT(fmt_err_msg != NULL);
+
+    fprintf(stderr, KYEL "    ERROR (%d): \n    ", err_code);
+
+    va_list args;
+    va_start(args, fmt_err_msg);
+
+    vfprintf(stderr, fmt_err_msg, args);
+    fprintf(stderr, KNRM KMAG "\n\n    PROGRAM STOPPED!!!\n\n" KNRM);
+
+    va_end(args);
+
+    free(labels);
+    fclose(file);
 
     exit(1);
 }
@@ -123,7 +136,11 @@ int IsRegister(char* str)
         return RDX_CODE;
 
     else
-        CompilationError(SYNTAX_ERR_CODE);
+    {
+        // CompilationError(stderr, SYNTAX_ERR_CODE, "WRONG SYNTAX");
+        fprintf(stderr, KYEL "    WRONG SYNTAX\n\n" KNRM);
+        exit(1);
+    }
 
     return 0;
 }
@@ -142,7 +159,9 @@ int LabelValue(char* name)
 
     else if (compilations_amnt)
     {
-        fprintf(stderr, "  ERROR: NO SUCH LABEL CALLED \"%s\"\n", name);
+        // CompilationError(stderr, LBL_ERR_CODE, "NO SUCH LABEL CALLED \"%s\"", name);
+        fprintf(stderr, KYEL "    NO SUCH LABEL CALLED \"%s\"\n\n" KNRM, name);
+
         exit(1);
     }
 
@@ -203,7 +222,11 @@ void GetArg(char* cmdline, int* num_arg, int* reg_arg)
     }
 
     else  //если нет аргументов
-        CompilationError(SYNTAX_ERR_CODE);
+    {
+        // CompilationError(stderr, SYNTAX_ERR_CODE, "WRONG SYNTAX");
+        fprintf(stderr, KYEL "    WRONG SYNTAX\n\n" KNRM);
+        exit(1);
+    }
 
     *num_arg = num1 + num2;
 }
@@ -378,6 +401,53 @@ void Compile(const char* filename_input, const char* filename_output)
                           0
                          };
 
+    #define DEF_CMD(name, num, arg, ...)                                                         \
+            if (strcasecmp(cmd, #name) == 0)                                                     \
+            {                                                                                    \
+                int n_args = 0;                                                                  \
+                                                                                                 \
+                if (arg)                                                                         \
+                    n_args = SetCodes(text[line], &code, &tech_info.code_size, &ip, CMD_##name); \
+                                                                                                 \
+                else                                                                             \
+                    code[ip++] = cmd_code | CMD_##name;                                          \
+                                                                                                 \
+                WriteListing(file_listing, code, ip, n_args);                                    \
+            }                                                                                    \
+            else
+
+    #define DEF_JMP(name, num, ...)                                                              \
+        if (strcasecmp(cmd, #name) == 0)                                                         \
+        {                                                                                        \
+            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_##name);    \
+                                                                                                 \
+            WriteListing(file_listing, code, ip, 1);                                             \
+        }                                                                                        \
+        else
+
+    #define DEF_DUMP(name, num)                                                                  \
+        if (strcasecmp(cmd, #name) == 0)                                                         \
+        {                                                                                        \
+            code[ip++] = cmd_code | CMD_##name;                                                  \
+                                                                                                 \
+            int ip_min = 0, ip_max = 0;                                                          \
+            int is_arg = sscanf(text[line], "%*s %d %d", &ip_min, &ip_max);                      \
+                                                                                                 \
+            if ((is_arg < 1) || (ip_min >= ip_max))                                              \
+            {                                                                                    \
+                ip_min = (char) -1;                                                              \
+                ip_max = (char) -1;                                                              \
+            }                                                                                    \
+                                                                                                 \
+            code[ip++] = ip_min;                                                                 \
+            code[ip++] = ip_max;                                                                 \
+                                                                                                 \
+            tech_info.code_size += 2;                                                            \
+                                                                                                 \
+            WriteListing(file_listing, code, ip, 2, sizeof(char));                               \
+        }                                                                                        \
+        else
+
     while (line < text_lines_amount)
     {
         char* cmd = (char*) calloc(strlen(text[line]), sizeof(char));
@@ -387,130 +457,8 @@ void Compile(const char* filename_input, const char* filename_output)
         char cmd_code = 0;
         // Cmd cmd_code = {};
 
-        if (strcasecmp(cmd, "push") == 0)
-        {
-            int n_args = SetCodes(text[line], &code, &tech_info.code_size, &ip, CMD_PUSH);
-            WriteListing(file_listing, code, ip, n_args);
-        }
+        #include "Cmd.h"
 
-        else if (strcasecmp(cmd, "pop") == 0)
-        {
-            int n_args = SetCodes(text[line], &code, &tech_info.code_size, &ip, CMD_POP);
-            WriteListing(file_listing, code, ip, n_args);
-        }
-
-        else if (strcasecmp(cmd, "add") == 0)
-        {
-            code[ip++] = cmd_code | CMD_ADD;
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else if (strcasecmp(cmd, "sub") == 0)
-        {
-            code[ip++] = cmd_code | CMD_SUB;
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else if (strcasecmp(cmd, "mul") == 0)
-        {
-            code[ip++] = cmd_code | CMD_MUL;
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else if (strcasecmp(cmd, "div") == 0)
-        {
-            code[ip++] = cmd_code | CMD_DIV;
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else if (strcasecmp(cmd, "out") == 0)
-        {
-            code[ip++] = cmd_code | CMD_OUT;
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else if (strcasecmp(cmd, "pin") == 0)
-        {
-            code[ip++] = cmd_code | CMD_PIN;
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else if (strcasecmp(cmd, "hlt") == 0)
-        {
-            code[ip++] = cmd_code | CMD_HLT;
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else if (strcasecmp(cmd, "dump") == 0)
-        {
-            code[ip++] = cmd_code | CMD_DUMP;
-
-            int ip_min = 0, ip_max = 0;
-            int is_arg = sscanf(text[line], "%*s %d %d", &ip_min, &ip_max);
-
-            if ((is_arg < 1) || (ip_min >= ip_max))
-            {
-                ip_min = (char) -1;
-                ip_max = (char) -1;
-            }
-
-            code[ip++] = ip_min;
-            code[ip++] = ip_max;
-
-            tech_info.code_size += 2;
-
-            WriteListing(file_listing, code, ip, 2, sizeof(char));
-        }
-
-        else if (strcasecmp(cmd, "jmp") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JMP);
-            WriteListing(file_listing, code, ip, 1);
-        }
-
-        else if (strcasecmp(cmd, "jb") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JB);
-            WriteListing(file_listing, code, ip, 1);
-        }
-
-        else if (strcasecmp(cmd, "jbe") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JBE);
-            WriteListing(file_listing, code, ip, 1);
-        }
-
-        else if (strcasecmp(cmd, "ja") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JA);
-            WriteListing(file_listing, code, ip, 1);
-        }
-
-        else if (strcasecmp(cmd, "jae") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JAE);
-            WriteListing(file_listing, code, ip, 1);
-        }
-
-        else if (strcasecmp(cmd, "je") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JE);
-            WriteListing(file_listing, code, ip, 1);
-        }
-
-        else if (strcasecmp(cmd, "jne") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JNE);
-            WriteListing(file_listing, code, ip, 1);
-        }
-
-        else if (strcasecmp(cmd, "jf") == 0)
-        {
-            cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_JF);
-            WriteListing(file_listing, code, ip, 0);
-        }
-
-        else
         {
             char* arg = cmd;
             sscanf(cmd, " %[^:]s", arg);
@@ -524,10 +472,13 @@ void Compile(const char* filename_input, const char* filename_output)
                 }
             }
 
-            else
+            else if (!compilations_amnt)
             {
+                // CompilationError(stderr, CMD_ERR_CODE, "THERE IS NO COMMAND CALLED \"%s\" IN \"%d\" VERSION!!!\n"
+                                                    //    "    COMPILED FILE WOULD BE DAMAGED!!!", cmd, CMD_VERSION);
+
                 fprintf(stderr, "    THERE IS NO COMMAND CALLED \"%s\" IN \"%d\" VERSION!!!\n"
-                                "    COMPILED FILE WILL BE DAMAGED!!!\n\n", cmd, CMD_VERSION);
+                                "    COMPILED FILE WOULD BE DAMAGED!!!\n\n", cmd, CMD_VERSION);
 
                 tech_info.version = WRNG_CMD_VERSION;
 
@@ -543,6 +494,10 @@ void Compile(const char* filename_input, const char* filename_output)
         free(cmd);
         line++;
     }
+
+    #undef DEF_DUMP
+    #undef DEF_JMP
+    #undef DEF_CMD
 
     fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
     fwrite((const void*) code, sizeof(char), tech_info.code_size, file_out);

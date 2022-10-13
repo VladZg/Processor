@@ -7,6 +7,7 @@
 #include "Description.h"
 
 #define NDUMP
+// #define DELAYS_MODE
 
 #include "CpuGraphics.h"
 #include "TechInfo.h"
@@ -117,8 +118,7 @@ int* GetRAM(Cpu* cpu, int index)
 {
     ASSERT(cpu != NULL);
 
-    fprintf(stderr, "  Getting RAM[%d] value", index);
-    PrintLoading(GET_RAM_DELAY);
+    PrintLoading(GET_RAM_DELAY, "  Getting RAM[%d] value", index);
 
     return &cpu->RAM[index];
 }
@@ -311,18 +311,22 @@ int DoCpuCycle(const char* filename_input)
 
         #define DEF_CMD(name, num, arg, ...)                                   \
             case CMD_##name:                                                   \
+            {                                                                  \
                 PrintCmdName(#name);                                           \
+                                                                               \
                 IP++;                                                          \
                 __VA_ARGS__                                                    \
-                break;
+                                                                               \
+                break;                                                         \
+            }
 
         #define DEF_JMP(name, num, ...)                                        \
             DEF_CMD(name, num, 1,                                              \
             {                                                                  \
                 if (__VA_ARGS__)                                               \
                 {                                                              \
-                    fprintf(stderr, "  jumping from %ld to %d", IP, CODE[IP]); \
-                    PrintLoading(JUMP_DELAY);                                  \
+                    PrintLoading(JUMP_DELAY, "  Jumping from %ld to %d",       \
+                                 IP, CODE[IP]);                                \
                                                                                \
                     IP = CODE[IP];                                             \
                 }                                                              \
@@ -330,10 +334,18 @@ int DoCpuCycle(const char* filename_input)
                 else IP += sizeof(int);                                        \
             })
 
+        #define DEF_DUMP(name, num)                                            \
+            DEF_CMD(name, num, 1,                                              \
+            {                                                                  \
+                char ip_min = CODE[IP++];                                      \
+                char ip_max = CODE[IP++];                                      \
+                                                                               \
+                FullDump(&cpu, ip_min, ip_max);                                \
+            })
+
         while (IP < cpu.code_size)
         {
-            fprintf(stderr, "  Processing");
-            PrintLoading(BETW_STEPS_DELAY);
+            PrintLoading(BETW_STEPS_DELAY, "  Processing");
 
             int cmd = CODE[IP];
 
@@ -347,6 +359,7 @@ int DoCpuCycle(const char* filename_input)
             }
         }
 
+        #undef DEF_DUMP
         #undef DEF_JMP
         #undef DEF_CMD
 

@@ -1,3 +1,4 @@
+#include "Stack/Config.h"
 #include "Constants.h"
 #include <stdio.h>
 #include <string.h>
@@ -63,211 +64,59 @@ int Decompile(const char* filename_input, const char* filename_output)
 
         int ip = 0;
 
+        #define DEF_CMD(name, num, arg, ...)                      \
+            case CMD_##name:                                      \
+            {                                                     \
+                ip++;                                             \
+                                                                  \
+                fprintf(file_out, "%s ", #name);                  \
+                                                                  \
+                if (arg) PrintArgs(cmd, code, &ip, file_out);     \
+                                                                  \
+                fprintf(file_out, "\n");                          \
+                                                                  \
+                break;                                            \
+            }
+
+        #define DEF_JMP(name, num, ...)                           \
+            case CMD_##name:                                      \
+            {                                                     \
+                ip++;                                             \
+                                                                  \
+                fprintf(file_out, "%s ", #name);                  \
+                fprintf(file_out, "%d ", *(int*)(code + ip));     \
+                                                                  \
+                ip += sizeof(int);                                \
+                                                                  \
+                fprintf(file_out, "\n");                          \
+                                                                  \
+                break;                                            \
+            }
+
+        #define DEF_DUMP(name, num, ...)                          \
+            case CMD_##name:                                      \
+            {                                                     \
+                ip++;                                             \
+                                                                  \
+                fprintf(file_out, "%s ", #name);                  \
+                fprintf(file_out, "%d ", *(code + (ip++)));       \
+                fprintf(file_out, "%d\n", *(code + (ip++)));      \
+                                                                  \
+                break;                                            \
+            }
+
         while (ip < code_size)
         {
             char cmd = code[ip];
 
             switch(cmd & CMD_CODE_MASK)
             {
-                case CMD_PUSH:
-                {
-                    ip++;
-                    fprintf(file_out, "Push ");
-                    PrintArgs(cmd, code, &ip, file_out);
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_POP:
-                {
-                    ip++;
-                    fprintf(file_out, "Pop ");
-                    PrintArgs(cmd, code, &ip, file_out);
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_ADD:
-                {
-                    ip++;
-                    fprintf(file_out, "Add\n");
-
-                    break;
-                }
-
-                case CMD_SUB:
-                {
-                    ip++;
-                    fprintf(file_out, "Sub\n");
-
-                    break;
-                }
-
-                case CMD_MUL:
-                {
-                    ip++;
-                    fprintf(file_out, "Mul\n");
-
-                    break;
-                }
-
-                case CMD_DIV:
-                {
-                    ip++;
-                    fprintf(file_out, "Div\n");
-
-                    break;
-                }
-
-                case CMD_OUT:
-                {
-                    ip++;
-                    fprintf(file_out, "Out\n");
-
-                    break;
-                }
-
-                case CMD_PIN:
-                {
-                    ip++;
-                    fprintf(file_out, "Pin\n");
-
-                    break;
-                }
-
-                case CMD_HLT:
-                {
-                    ip++;
-                    fprintf(file_out, "Hlt\n");
-
-                    break;
-                }
-
-                case CMD_DUMP:
-                {
-                    ip++;
-                    fprintf(file_out, "Dump ");
-                    fprintf(file_out, "%d ", *(code + (ip++)));
-                    fprintf(file_out, "%d\n", *(code + (ip++)));
-
-                    break;
-                }
-
-                case CMD_JMP:
-                {
-                    ip++;
-                    fprintf(file_out, "Jmp ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-
-                    ip += sizeof(int);
-
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_JB:
-                {
-                    ip++;
-
-                    fprintf(file_out, "Jb ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-
-                    ip += sizeof(int);
-
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_JBE:
-                {
-                    ip++;
-
-                    fprintf(file_out, "Jbe ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-
-                    ip += sizeof(int);
-
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_JA:
-                {
-                    ip++;
-
-                    fprintf(file_out, "Ja ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-
-                    ip += sizeof(int);
-
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_JAE:
-                {
-                    ip++;
-
-                    fprintf(file_out, "Jae ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-
-                    ip += sizeof(int);
-
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_JE:
-                {
-                    ip++;
-
-                    fprintf(file_out, "Je ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-
-                    ip += sizeof(int);
-
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_JNE:
-                {
-                    ip++;
-
-                    fprintf(file_out, "Jne ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-
-                    ip += sizeof(int);
-
-                    fprintf(file_out, "\n");
-
-                    break;
-                }
-
-                case CMD_JF:
-                {
-                    ip++;
-
-                    fprintf(file_out, "Jf ");
-                    fprintf(file_out, "%d ", *(int*)(code + ip));
-                    fprintf(file_out, "\n");
-
-                    ip += sizeof(int);
-
-                    break;
-                }
+                #include "Cmd.h"
 
                 default:
                 {
-                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n  FILE \"%s\" IS DAMAGED!!!\n", code[ip], FILENAME_INPUT);
+                    fprintf(stderr, "  NO SUCH COMMAND WITH CODE %d\n"
+                                    "  FILE \"%s\" IS DAMAGED!!!\n", code[ip], FILENAME_INPUT);
 
                     fclose(file_inp);
                     fclose(file_out);
@@ -276,6 +125,10 @@ int Decompile(const char* filename_input, const char* filename_output)
                 }
             }
         }
+
+        #undef DEF_DUMP
+        #undef DEF_JMP
+        #undef DEF_CMD
 
         fclose(file_inp);
         fclose(file_out);

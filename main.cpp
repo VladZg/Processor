@@ -8,8 +8,8 @@ int main()
     system("g++ make.cpp Stack/Log.cpp -o make");
 
     system("./asm "    "Source.txt");
-    system("./disasm " "Source_output.asm");
     system("./cpu "    "Source_output.asm");
+    system("./disasm " "Source_output.asm");
 
     return 0;
 }
