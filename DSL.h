@@ -1,5 +1,5 @@
-#define POP( stack_ptr )         \
-    StackPop(stack_ptr);
+#define S_POP                   \
+    StackPop(&STACK)
 
-#define PUSH( stack_ptr, val )   \
-    SyackPush(stack_ptr, val);
+#define S_PUSH( val )           \
+    StackPush(&STACK, val)
