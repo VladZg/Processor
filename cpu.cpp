@@ -38,6 +38,8 @@ struct Cpu
     int*   RAM;
     Stack  stack;
 
+    Stack stack_addr_ret;
+
     int*   Regs;
 };
 
@@ -103,6 +105,9 @@ void CpuCtor(Cpu* cpu, int code_size, FILE* file)
 
     cpu->stack = {};
     StackCtor(cpu->stack);
+
+    cpu->stack_addr_ret = {};
+    StackCtor(cpu->stack_addr_ret);
 }
 
 void CpuCleaner(Cpu* cpu)
@@ -110,6 +115,7 @@ void CpuCleaner(Cpu* cpu)
     ASSERT(cpu != NULL);
 
     StackDtor(&cpu->stack);
+    StackDtor(&cpu->stack_addr_ret);
     free(cpu->RAM);
     free(cpu->code);
 }
@@ -219,7 +225,7 @@ void FullDump(Cpu* cpu, char ip_min, char ip_max)
 
     WriteNSymb(176, '=');
 
-    fprintf(stderr, "\\\\\n\n    ip:   ");
+    fprintf(stderr, "\\\\\n\n" KBLU "    ip:   " KNRM);
 
     for (int i = ip_min; i <= ip_max; i++)
     {
@@ -229,7 +235,7 @@ void FullDump(Cpu* cpu, char ip_min, char ip_max)
             fprintf(stderr, KYEL "%04d " KNRM, i);
     }
 
-    fprintf(stderr, "\n    code: ");
+    fprintf(stderr, KBLU "\n    code: " KNRM);
 
     for (int i = ip_min; i <= ip_max; i++)
     {
@@ -256,6 +262,12 @@ void FullDump(Cpu* cpu, char ip_min, char ip_max)
     RegsDump(cpu->Regs);
 
     RAMDump(cpu->RAM);
+
+    fprintf(stderr, "    Stack of return addresses:\n    {\n");
+
+    SimpleStackDump_(&cpu->stack_addr_ret);
+
+    fprintf(stderr, "    }\n");
 
     fprintf(stderr, "  \\\\");
 
@@ -320,11 +332,13 @@ int DoCpuCycle(const char* filename_input)
                 break;                                                         \
             }
 
-        #define DEF_JMP(name, num, ...)                                        \
+        #define DEF_JMP(name, num, condition, ...)                             \
             DEF_CMD(name, num, 1,                                              \
             {                                                                  \
-                if (__VA_ARGS__)                                               \
+                if (condition)                                                 \
                 {                                                              \
+                    __VA_ARGS__                                                \
+                                                                               \
                     PrintLoading(JUMP_DELAY, "  Jumping from %ld to %d",       \
                                  IP, CODE[IP]);                                \
                                                                                \

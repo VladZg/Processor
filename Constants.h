@@ -1,13 +1,13 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define DEF_CMD(name, num, ...)  \
+#define DEF_CMD(name, num, ...)             \
             CMD_##name = num,
 
-#define DEF_JMP(name, num, ...)  \
+#define DEF_JMP(name, num, condition, ...)  \
             DEF_CMD(name, num)
 
-#define DEF_DUMP(name, num, ...) \
+#define DEF_DUMP(name, num, ...)            \
             DEF_CMD(name, num)
 
 enum Comands      //автогенерация enuma команд
@@ -54,8 +54,8 @@ enum RegistersInfo
 
 enum RAMInfo
 {
-      RAM_SIZE   = 100,
-      RAM_POISON = 0xBAD,
+      RAM_SIZE   = 200,
+      RAM_POISON = 0xBADDED,
 };
 
 enum LabelsInfo
@@ -80,7 +80,7 @@ const int   LBL_POISON_VALUE                 = 0xBAD;
 
 // DelaysInfo
 const float GET_RAM_DELAY    = 1.0;
-const float JUMP_DELAY       = 1.5;
+const float JUMP_DELAY       = 1.0;
 const float BETW_STEPS_DELAY = 0.5;
 const float MIN_CYCLE_DELAY  = 0.5;
 

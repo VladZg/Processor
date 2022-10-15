@@ -136,22 +136,53 @@ DEF_JMP (JNE,  16, StackPop(&STACK) != StackPop(&STACK))
 DEF_JMP (JF,   17, IsFridayToday())
 
 
-// функции для приколов: ниже
+//добавленные функции (ниже)
 
-DEF_CMD (RUSSIA, 18, 0,
-{
-    int RUSSIA = PrintRusFlag();
-    fprintf(stderr, "  MEOW\n\n");
-})
+DEF_CMD (RUS, 18, 0,
+    {
+        int RUSSIA = PrintRusFlag();
+        fprintf(stderr, "  MEOW\n\n");
+    })
 
 DEF_CMD (PRINT, 19, 1,
-{
-    int arg_temp = 0;
-    int* arg = GetArg(&cpu, cmd, &arg_temp);
-    fprintf(stderr, "    ARGUMENT: %d ", *arg);
+    {
+        int arg_temp = 0;
+        int* arg = GetArg(&cpu, cmd, &arg_temp);
+        fprintf(stderr, "    ARGUMENT: %d ", *arg);
 
-    if (*arg == RAM_POISON)
-        fprintf(stderr, "(RAM POISONED)");
+        if (*arg == RAM_POISON)
+            fprintf(stderr, "(RAM POISONED)");
 
-    fprintf(stderr, "\n\n");
-})
+        fprintf(stderr, "\n\n");
+    })
+
+DEF_CMD (RAM, 20, 0,
+    {
+        fprintf(stderr, "  ");
+
+        for (int j = 0; j < 10; j++)
+        {
+            for (int i = 1; i <= 20; i++)
+            {
+                int num = cpu.RAM[20 * j + i];
+
+                if (num == RAM_POISON) fprintf(stderr, ".");
+
+                else fprintf(stderr, KYEL "*" KNRM);
+            }
+
+            fprintf(stderr, "\n  ");
+        }
+
+        fprintf(stderr, "\n\n");
+    })
+
+DEF_JMP (CALL, 21, 1,
+    {
+        StackPush(&cpu.stack_addr_ret, IP + sizeof(int));
+    })
+
+DEF_CMD (RET, 22, 0,
+    {
+        IP = StackPop(&cpu.stack_addr_ret);
+    })

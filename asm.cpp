@@ -268,7 +268,7 @@ int SetCodes(char* cmdline, char** code, int* code_size, int* ip, int Cmd_code)
 //
 //         else
 //         {
-//             fprintf(stderr, "Syntax Error\n");
+//             fprintf(stderr, "SYNTAX ERROR\n");
 //             exit(1);
 //         }
     }
@@ -355,8 +355,6 @@ int SetJumpCode(char* cmdline, char** code, int* code_size, int* ip, int Cmd_cod
 
 void WriteListing(FILE* file, char* code, int ip, int n_args, size_t arg_size)
 {
-    // fprintf(file, "ip was: %d  ", ip);
-
     ip--;
 
     for (int i = 0; i < n_args; i++)
@@ -413,18 +411,23 @@ void Compile(const char* filename_input, const char* filename_output)
                     code[ip++] = cmd_code | CMD_##name;                                          \
                                                                                                  \
                 WriteListing(file_listing, code, ip, n_args);                                    \
+                                                                                                 \
+                tech_info.code_size++;                                                           \
             }                                                                                    \
             else
 
-    #define DEF_JMP(name, num, ...)                                                              \
+    #define DEF_JMP(name, num, condition, ...)                                                   \
         if (strcasecmp(cmd, #name) == 0)                                                         \
         {                                                                                        \
             cmd_code = SetJumpCode(text[line], &code, &tech_info.code_size, &ip, CMD_##name);    \
                                                                                                  \
             WriteListing(file_listing, code, ip, 1);                                             \
+                                                                                                 \
+            tech_info.code_size++;                                                               \
         }                                                                                        \
         else
 
+    //особая функция с особыми переменными
     #define DEF_DUMP(name, num)                                                                  \
         if (strcasecmp(cmd, #name) == 0)                                                         \
         {                                                                                        \
@@ -442,7 +445,7 @@ void Compile(const char* filename_input, const char* filename_output)
             code[ip++] = ip_min;                                                                 \
             code[ip++] = ip_max;                                                                 \
                                                                                                  \
-            tech_info.code_size += 2;                                                            \
+            tech_info.code_size += 3;                                                            \
                                                                                                  \
             WriteListing(file_listing, code, ip, 2, sizeof(char));                               \
         }                                                                                        \
@@ -457,6 +460,11 @@ void Compile(const char* filename_input, const char* filename_output)
         char cmd_code = 0;
         // Cmd cmd_code = {};
 
+        // оставить для красоты вводимого кода, в общем случае убрать
+        if (!(strcmp(cmd, "\0")) || (!strcmp(cmd, "{")) || (!strcmp(cmd, "}"))) {}
+        // if (strcmp(cmd, "") == 0) {}
+
+        else
         #include "Cmd.h"
 
         {
@@ -484,13 +492,11 @@ void Compile(const char* filename_input, const char* filename_output)
 
                 fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
 
+                free(cmd);
                 exit(1);
             }
-
-            tech_info.code_size--;
         }
 
-        tech_info.code_size++;
         free(cmd);
         line++;
     }
