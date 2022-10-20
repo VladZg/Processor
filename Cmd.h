@@ -160,15 +160,15 @@ DEF_CMD (RAM, 20, 0,
     {
         fprintf(stderr, "  ");
 
-        for (int j = 0; j < 10; j++)
+        for (int j = 0; j < RAM_HEIGTH; j++)
         {
-            for (int i = 1; i <= 20; i++)
+            for (int i = 1; i <= RAM_WIDTH; i++)
             {
-                int num = cpu.RAM[20 * j + i];
+                int num = cpu.RAM[RAM_WIDTH * j + i];
 
-                if (num == RAM_POISON) fprintf(stderr, ".");
+                if (num == RAM_POISON) fprintf(stderr, "□");
 
-                else fprintf(stderr, KYEL "*" KNRM);
+                else fprintf(stderr, KYEL "▩" KNRM);
             }
 
             fprintf(stderr, "\n  ");
@@ -185,4 +185,34 @@ DEF_JMP (CALL, 21, 1,
 DEF_CMD (RET, 22, 0,
     {
         IP = StackPop(&cpu.stack_addr_ret);
+    })
+
+DEF_CMD (SIN, 23, 1,
+    {
+        int arg_temp = 0;
+        int* arg = GetArg(&cpu, cmd, &arg_temp);
+
+        // fprintf(stderr, "ARG: %f", ((float) (*arg)) / 10000000);
+        StackPush(&STACK, rintf((sinf(((float) (*arg)) / 10000000) * 10000000)));
+        // fprintf(stderr, "\nSIN: %f\n", (sinf(((float) (*arg)) / 10000000)));
+
+        SimpleStackDump(&STACK);
+    })
+
+DEF_CMD (COS, 24, 1,
+    {
+        int arg_temp = 0;
+        int* arg = GetArg(&cpu, cmd, &arg_temp);
+
+        // fprintf(stderr, "ARG: %f", ((float) (*arg)) / 10000000);
+        StackPush(&STACK, rintf((cosf(((float) (*arg)) / 10000000)) * 10000000));
+        // fprintf(stderr, "\nCOS: %f\n", (cosf(((float) (*arg)) / 10000000)));
+
+        SimpleStackDump(&STACK);
+    })
+
+DEF_CMD(CLEAR, 25, 0,
+    {
+        sleep(PRINT_RAM_DELAY);
+        system("clear");
     })

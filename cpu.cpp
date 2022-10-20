@@ -1,8 +1,9 @@
 #include "Stack/Config.h"
-#include "Constants.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
+#include "Constants.h"
 #include "Stack/Stack.h"
 #include "Description.h"
 
@@ -26,7 +27,7 @@ int RUSSIA = PrintRusFlag();
 #undef FILENAME_INPUT
 #undef FILENAME_INPUT_DEFAULT
 
-const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
+const char  FILENAME_INPUT_DEFAULT[]  = "./Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
 
 struct Cpu
@@ -153,8 +154,6 @@ int* GetArg(Cpu* cpu, int cmd, int* arg)
 
         else CpuError(cpu, stderr, ARG_ERR_CODE, "ARGUMENT OF PUSH IS WRONG, "
                                                  "ITS INDEX (%d) OUT OF RAM RANGE", *arg);
-
-        // arg = GetRAM(cpu, *arg);
     }
 
     return arg;
@@ -306,6 +305,42 @@ void CpuError(Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...)
     exit(1);
 }
 
+#define DEF_CMD(name, num, arg, ...)                                   \
+    case CMD_##name:                                                   \
+    {                                                                  \
+        PrintCmdName(#name);                                           \
+                                                                       \
+        IP++;                                                          \
+        __VA_ARGS__                                                    \
+                                                                       \
+        break;                                                         \
+    }
+
+#define DEF_JMP(name, num, condition, ...)                             \
+    DEF_CMD(name, num, 1,                                              \
+    {                                                                  \
+        if (condition)                                                 \
+        {                                                              \
+            __VA_ARGS__                                                \
+                                                                       \
+            PrintLoading(JUMP_DELAY, "  Jumping from %ld to %d",       \
+                            IP, CODE[IP]);                             \
+                                                                       \
+            IP = *(int*)(CODE + IP);                                   \
+        }                                                              \
+                                                                       \
+        else IP += sizeof(int);                                        \
+    })
+
+#define DEF_DUMP(name, num)                                            \
+    DEF_CMD(name, num, 1,                                              \
+    {                                                                  \
+        char ip_min = CODE[IP++];                                      \
+        char ip_max = CODE[IP++];                                      \
+                                                                       \
+        FullDump(&cpu, ip_min, ip_max);                                \
+    })
+
 int DoCpuCycle(const char* filename_input)
 {
     ASSERT(filename_input != NULL);
@@ -320,42 +355,6 @@ int DoCpuCycle(const char* filename_input)
     {
         Cpu cpu = {};
         CpuCtor(&cpu, tech_info.code_size, file);
-
-        #define DEF_CMD(name, num, arg, ...)                                   \
-            case CMD_##name:                                                   \
-            {                                                                  \
-                PrintCmdName(#name);                                           \
-                                                                               \
-                IP++;                                                          \
-                __VA_ARGS__                                                    \
-                                                                               \
-                break;                                                         \
-            }
-
-        #define DEF_JMP(name, num, condition, ...)                             \
-            DEF_CMD(name, num, 1,                                              \
-            {                                                                  \
-                if (condition)                                                 \
-                {                                                              \
-                    __VA_ARGS__                                                \
-                                                                               \
-                    PrintLoading(JUMP_DELAY, "  Jumping from %ld to %d",       \
-                                 IP, CODE[IP]);                                \
-                                                                               \
-                    IP = CODE[IP];                                             \
-                }                                                              \
-                                                                               \
-                else IP += sizeof(int);                                        \
-            })
-
-        #define DEF_DUMP(name, num)                                            \
-            DEF_CMD(name, num, 1,                                              \
-            {                                                                  \
-                char ip_min = CODE[IP++];                                      \
-                char ip_max = CODE[IP++];                                      \
-                                                                               \
-                FullDump(&cpu, ip_min, ip_max);                                \
-            })
 
         while (IP < cpu.code_size)
         {
@@ -372,10 +371,6 @@ int DoCpuCycle(const char* filename_input)
                                                           "  FILE \"%s\" IS DAMAGED!!!", CODE[IP], FILENAME_INPUT);
             }
         }
-
-        #undef DEF_DUMP
-        #undef DEF_JMP
-        #undef DEF_CMD
 
         CpuCleaner(&cpu);
         fclose(file);
@@ -394,3 +389,7 @@ int DoCpuCycle(const char* filename_input)
     fclose(file);
     exit(1);
 }
+
+#undef DEF_DUMP
+#undef DEF_JMP
+#undef DEF_CMD

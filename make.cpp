@@ -15,13 +15,13 @@
 
 #define SOURCE_FILE_NAME    "Source"
 
-#define SOURCE_FILE_DEFAULT "Source_default.txt"
+#define SOURCE_FILE_DEFAULT "./Source_default.txt"
 #define SOURCE_FILE         DIRECTORY SOURCE_FILE_NAME ".txt"
-#define SOURCE_ASM_FILE     "Source_output.asm"
-#define ASM_FILE            "asm.cpp"
-#define CPU_FILE            "cpu.cpp"
-#define DISASM_FILE         "disasm.cpp"
-#define FILESINFO_FILE      "FilesInfo.txt"
+#define SOURCE_ASM_FILE     "./Source_output.asm"
+#define ASM_FILE            "./asm.cpp"
+#define CPU_FILE            "./cpu.cpp"
+#define DISASM_FILE         "./disasm.cpp"
+#define FILESINFO_FILE      "./FilesInfo.txt"
 
 const char* source_file = nullptr;
 

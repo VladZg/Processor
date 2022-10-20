@@ -54,7 +54,9 @@ enum RegistersInfo
 
 enum RAMInfo
 {
-      RAM_SIZE   = 200,
+      RAM_WIDTH  = 81,
+      RAM_HEIGTH = 21,
+      RAM_SIZE   = RAM_WIDTH * RAM_HEIGTH,
       RAM_POISON = 0xBADDED,
 };
 
@@ -83,5 +85,6 @@ const float GET_RAM_DELAY    = 1.0;
 const float JUMP_DELAY       = 1.0;
 const float BETW_STEPS_DELAY = 0.5;
 const float MIN_CYCLE_DELAY  = 0.5;
+const float PRINT_RAM_DELAY  = 0.0;
 
 #endif
