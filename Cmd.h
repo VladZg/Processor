@@ -217,6 +217,11 @@ DEF_CMD(CLEAR_CONSOLE, 25, 0,
     {
         sleep(PRINT_RAM_DELAY);
         system("clear");
+
+        // for (int i = 0; i < 10000; i++)
+        // {
+        //     fprintf(stderr, "\r");
+        // }
     })
 
 DEF_CMD(CLEAR_RAM, 26, 0,
@@ -228,4 +233,20 @@ DEF_CMD(CLEAR_RAM, 26, 0,
 DEF_CMD(SQUARE, 27, 0,
     {
         S_PUSH(sqrt(S_POP));
+    })
+
+DEF_CMD(DELAY, 28, 1,
+    {
+        int arg_temp = 0;
+        int* arg = GetArg(&cpu, cmd, &arg_temp);
+
+        struct timespec t_r = {0, (*arg) * 1000000};
+        struct timespec t_w;
+
+        nanosleep(&t_r, &t_w);
+    })
+
+DEF_CMD(OUT_FLOAT, 29, 0,
+    {
+        fprintf(stderr, "    %.5f\n", S_POP / 1000.0);
     })

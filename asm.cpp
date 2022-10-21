@@ -24,8 +24,8 @@ int    n_labels = 0;
 Label* labels = nullptr;
 int    compilations_amnt = 0;
 
-void   Compile (const char* filename_input, const char* filename_output);
-void   CompilationError(FILE* file, int err_code, const char* fmt_err_msg, ...);
+int    Compile (const char* filename_input, const char* filename_output);
+int    CompilationError(FILE* file, int err_code, const char* fmt_err_msg, ...);
 
 void   LablesCtor(Label* labels);
 void   LablesCleaner(Label* labels);
@@ -34,7 +34,7 @@ int    LabelValue(char* name);
 void   WriteLabels(FILE* file_listing);
 
 size_t IsArgs (const char* cmdname, char* cmdline);
-void   GetArg (char* cmdline, int* num_arg, int* reg_arg);
+int    GetArg (char* cmdline, int* num_arg, int* reg_arg);
 int    SetCodes (char* cmdline, char** code, int* code_size, int* ip, int Cmd_code);
 int    SetJumpCode(char* cmdline, char** code, int* code_size, int* ip, int Cmd_code);
 
@@ -87,7 +87,7 @@ void WriteLabels(FILE* file_listing)
     fprintf(file_listing, "}\n");
 }
 
-void CompilationError(FILE* file, int err_code, const char* fmt_err_msg, ...)
+int CompilationError(FILE* file, int err_code, const char* fmt_err_msg, ...)
 {
     ASSERT(file != NULL);
     ASSERT(fmt_err_msg != NULL);
@@ -105,7 +105,8 @@ void CompilationError(FILE* file, int err_code, const char* fmt_err_msg, ...)
     free(labels);
     fclose(file);
 
-    exit(1);
+    // exit(1);
+    return 0;
 }
 
 int IsLabel(char* name)
@@ -119,29 +120,27 @@ int IsLabel(char* name)
     return 0;
 }
 
+#define DEF_REG( name, num )                \
+    if (strcasecmp(str, #name) == 0)        \
+        return REG_##name;                  \
+    else
+
 int IsRegister(char* str)
 {
-    if (strcasecmp(str, "rax") == 0)
-        return RAX_CODE;
+    #include "Reg.h"
 
-    else if (strcasecmp(str, "rbx") == 0)
-        return RBX_CODE;
-
-    else if (strcasecmp(str, "rcx") == 0)
-        return RCX_CODE;
-
-    else if (strcasecmp(str, "rdx") == 0)
-        return RDX_CODE;
-
-    else
     {
         // CompilationError(stderr, SYNTAX_ERR_CODE, "WRONG SYNTAX");
-        fprintf(stderr, KYEL "    WRONG SYNTAX\n\n" KNRM);
-        exit(1);
+        fprintf(stderr, KYEL "    WRONG SYNTAX:\n"
+                             "        NO SUCH REGISTER CALLED \"%s\"\n\n" KNRM, str);
+        // exit(1);
+        return 0;
     }
 
     return 0;
 }
+
+#undef DEF_REG
 
 size_t IsArgs(const char* cmdname, char* cmdline)
 {
@@ -160,7 +159,8 @@ int LabelValue(char* name)
         // CompilationError(stderr, LBL_ERR_CODE, "NO SUCH LABEL CALLED \"%s\"", name);
         fprintf(stderr, KYEL "    NO SUCH LABEL CALLED \"%s\"\n\n" KNRM, name);
 
-        exit(1);
+        // exit(1);
+        return 0;
     }
 
     return 0;
@@ -186,7 +186,7 @@ void LablesCleaner(Label* labels)
         }
 }
 
-void GetArg(char* cmdline, int* num_arg, int* reg_arg)
+int GetArg(char* cmdline, int* num_arg, int* reg_arg)
 {
     int arg1_shift = 0;   // arg1_shift - сдвиг первого аргумента отн начала строки
     int arg2_shift = 0;   // arg2_shift - 0, если нет второго аргумента, если есть - то это сдвиг от начала
@@ -222,11 +222,14 @@ void GetArg(char* cmdline, int* num_arg, int* reg_arg)
     else  //если нет аргументов
     {
         // CompilationError(stderr, SYNTAX_ERR_CODE, "WRONG SYNTAX");
-        fprintf(stderr, KYEL "    WRONG SYNTAX\n\n" KNRM);
-        exit(1);
+        fprintf(stderr, KYEL "    WRONG SYNTAX:"
+                             "        NO ARGUMNENTS IN COMMAND \"%s\"\n\n" KNRM, cmdline);
+        // exit(1);
+        return 0;
     }
 
     *num_arg = num1 + num2;
+    return 1;
 }
 
 int SetCodes(char* cmdline, char** code, int* code_size, int* ip, int Cmd_code)
@@ -430,7 +433,7 @@ if (strcasecmp(cmd, #name) == 0)                                                
 }                                                                                     \
 else
 
-void Compile(const char* filename_input, const char* filename_output)
+int Compile(const char* filename_input, const char* filename_output)
 {
     char** text = nullptr;
     char*  data = nullptr;
@@ -499,7 +502,8 @@ void Compile(const char* filename_input, const char* filename_output)
                 fwrite((const void*) &tech_info, sizeof(int), TECH_INFO_SIZE, file_out);
 
                 free(cmd);
-                exit(1);
+                // exit(1);
+                return 0;
             }
         }
 
@@ -517,6 +521,8 @@ void Compile(const char* filename_input, const char* filename_output)
     free(text);
     free(data);
     free(code);
+
+    return 1;
 }
 
 #undef DEF_DUMP

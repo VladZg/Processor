@@ -40,17 +40,19 @@ enum ErrCodes
       LBL_ERR_CODE         = 6,
 };
 
-int START_REGS[5] = {0, 0, 0, 0, 0};
+int START_REGS[7] = {0, 0, 0, 0, 0, 0, 0};
+
+#define DEF_REG( name, num )              \
+      REG_##name = num,                   \
 
 enum RegistersInfo
 {
-      RAX_CODE  = 1,
-      RBX_CODE  = 2,
-      RCX_CODE  = 3,
-      RDX_CODE  = 4,
+      #include "Reg.h"
 
-      REGS_SIZE = 4,
+      REGS_SIZE = 6,
 };
+
+#undef DEF_REG
 
 enum RAMInfo
 {
@@ -62,7 +64,7 @@ enum RAMInfo
 
 enum LabelsInfo
 {
-      LBLS_MAXSIZE     = 5,
+      LBLS_MAXSIZE     = 10,
       LBLNAME_MAXSIZE  = 20,
 };
 

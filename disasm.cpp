@@ -121,7 +121,8 @@ int Decompile(const char* filename_input, const char* filename_output)
                     fclose(file_inp);
                     fclose(file_out);
 
-                    exit(1);
+                    // exit(1);
+                    return 0;
                 }
             }
         }
@@ -139,7 +140,8 @@ int Decompile(const char* filename_input, const char* filename_output)
         fprintf(stderr, "    WRONG TYPE OF ASM FILE!!!\n"
                         "    YOU HAVE TO USE CP_FILECODE \"%d\"\n\n", CP_FILECODE);
         fclose(file_inp);
-        exit(1);
+        // exit(1);
+        return 0;
     }
 
     else if (tech_info.version != CMD_VERSION)
@@ -148,35 +150,33 @@ int Decompile(const char* filename_input, const char* filename_output)
                         "    YOU HAVE TO USE THE \"%d\" VERSION!!!\n\n",
                 tech_info.version, CMD_VERSION);
         fclose(file_inp);
-        exit(1);
+        // exit(1);
+        return 0;
     }
 
     return 1;
 }
 
+#define DEF_REG( name, num )    \
+    case REG_##name:            \
+        return #name;
+
 const char* ConvertReg(int reg_code)
 {
     switch (reg_code)
     {
-        case RAX_CODE:
-            return "rax";
-
-        case RBX_CODE:
-            return "rbx";
-
-        case RCX_CODE:
-            return "rcx";
-
-        case RDX_CODE:
-            return "rdx";
+        #include "Reg.h"
 
         default:
         {
             fprintf(stderr, "ERROR: Wrong register code\n");
-            exit(1);
+            // exit(1);
+            return NULL;
         }
     }
 }
+
+#undef DEF_REG
 
 void PrintArgs(char cmd, char* code, int* ip, FILE* file_out)
 {

@@ -50,7 +50,7 @@ struct Cpu
 
 void CpuCtor    (Cpu* cpu, int code_size, FILE* file);
 void CpuCleaner (Cpu* cpu);
-void CpuError   (Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...);
+int  CpuError   (Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...);
 int  DoCpuCycle (const char* filename_input);
 
 int* GetArg     (Cpu* cpu, int cmd, int* arg);
@@ -284,7 +284,7 @@ void FullDump(Cpu* cpu, char ip_min, char ip_max) {}
 
 #endif
 
-void CpuError(Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...)
+int CpuError(Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...)
 {
     ASSERT(cpu != NULL);
     ASSERT(file != NULL);
@@ -302,7 +302,8 @@ void CpuError(Cpu* cpu, FILE* file, int err_code, const char* fmt_err_msg, ...)
 
     CpuCleaner(cpu);
     fclose(file);
-    exit(1);
+    return 0;
+    // exit(1);
 }
 
 #define DEF_CMD(name, num, arg, ...)                                   \
@@ -387,7 +388,8 @@ int DoCpuCycle(const char* filename_input)
                              "  YOU HAVE TO USE THE \"%d\" VERSION!!!\n" KNRM, tech_info.version, CMD_VERSION);
 
     fclose(file);
-    exit(1);
+    return 0;
+    // exit(1);
 }
 
 #undef DEF_DUMP
