@@ -467,7 +467,7 @@ void Compile(const char* filename_input, const char* filename_output)
         // Cmd cmd_code = {};
 
         // оставить для красоты вводимого кода, в общем случае убрать
-        if (!(strcmp(cmd, "\0")) || (!strcmp(cmd, "{")) || (!strcmp(cmd, "}"))) {}
+        if (!(strcmp(cmd, "")) || (!strcmp(cmd, "{")) || (!strcmp(cmd, "}"))) {}
         // if (strcmp(cmd, "") == 0) {}
 
         else

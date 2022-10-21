@@ -1,3 +1,5 @@
+#include "DSL.h"
+
 DEF_CMD (HLT,  0,  0,
     {
         fprintf(stderr, "    Program \"%s\" has finished correctly\n", FILENAME_INPUT);
@@ -13,7 +15,7 @@ DEF_CMD (PUSH, 1,  1,
         int* arg = GetArg(&cpu, cmd, &arg_temp);
 
         if (*arg != RAM_POISON)
-            StackPush(&STACK, *arg);
+            S_PUSH(*arg);
 
         else CpuError(&cpu, file, ARG_ERR_CODE, "ARGUMENT OF PUSH IS EMPTY (POISONED) ELEM FROM THE RAM");
 
@@ -22,34 +24,34 @@ DEF_CMD (PUSH, 1,  1,
 
 DEF_CMD (ADD,  2,  0,
     {
-        StackPush(&STACK, StackPop(&STACK) + StackPop(&STACK));
+        S_PUSH(S_POP + S_POP);
 
         SimpleStackDump(&STACK);
     })
 
 DEF_CMD (SUB,  3,  0,
     {
-        int num = StackPop(&STACK);
+        int num = S_POP;
 
-        StackPush(&STACK, StackPop(&STACK) - num);
+        S_PUSH(S_POP - num);
 
         SimpleStackDump(&STACK);
     })
 
 DEF_CMD (MUL,  4,  0,
     {
-        StackPush(&STACK, StackPop(&STACK) * StackPop(&STACK));
+        S_PUSH(S_POP * S_POP);
 
         SimpleStackDump(&STACK);
     })
 
 DEF_CMD (DIV,  5,  0,
     {
-        int num = StackPop(&STACK);
+        int num = S_POP;
 
         if (num)
         {
-            StackPush(&STACK, StackPop(&STACK) / num);
+            S_PUSH(S_POP / num);
 
             SimpleStackDump(&STACK);
         }
@@ -59,7 +61,7 @@ DEF_CMD (DIV,  5,  0,
 
 DEF_CMD (OUT,  6,  0,
     {
-        int popped = StackPop(&STACK);
+        int popped = S_POP;
 
         SimpleStackDump(&STACK);
 
@@ -80,7 +82,7 @@ DEF_CMD (PIN,  8,  0,
 
         if (scanf("%d", &num))
         {
-            StackPush(&STACK, num);
+            S_PUSH(num);
 
             SimpleStackDump(&STACK);
         }
@@ -112,7 +114,7 @@ DEF_CMD (POP,  9,  1,
 
         else CpuError(&cpu, file, ARG_TYPE_ERR_CODE, "WRONG TYPE OF POP ARGUMENT");
 
-        *arg = StackPop(&STACK);
+        *arg = S_POP;
 
         SimpleStackDump(&STACK);
         RegsDump(cpu.Regs);
@@ -121,17 +123,17 @@ DEF_CMD (POP,  9,  1,
 
 DEF_JMP (JMP,  10, 1)
 
-DEF_JMP (JB,   11, StackPop(&STACK) > StackPop(&STACK))
+DEF_JMP (JB,   11, S_POP >  S_POP)
 
-DEF_JMP (JBE,  12, StackPop(&STACK) >= StackPop(&STACK))
+DEF_JMP (JBE,  12, S_POP >= S_POP)
 
-DEF_JMP (JA,   13, StackPop(&STACK) < StackPop(&STACK))
+DEF_JMP (JA,   13, S_POP <  S_POP)
 
-DEF_JMP (JAE,  14, StackPop(&STACK) <= StackPop(&STACK))
+DEF_JMP (JAE,  14, S_POP <= S_POP)
 
-DEF_JMP (JE,   15, StackPop(&STACK) == StackPop(&STACK))
+DEF_JMP (JE,   15, S_POP == S_POP)
 
-DEF_JMP (JNE,  16, StackPop(&STACK) != StackPop(&STACK))
+DEF_JMP (JNE,  16, S_POP != S_POP)
 
 DEF_JMP (JF,   17, IsFridayToday())
 
@@ -193,7 +195,7 @@ DEF_CMD (SIN, 23, 1,
         int* arg = GetArg(&cpu, cmd, &arg_temp);
 
         // fprintf(stderr, "ARG: %f", ((float) (*arg)) / 10000000);
-        StackPush(&STACK, rintf((sinf(((float) (*arg)) / 10000000) * 10000000)));
+        S_PUSH(rintf((sinf(((float) (*arg)) / 10000000) * 10000000)));
         // fprintf(stderr, "\nSIN: %f\n", (sinf(((float) (*arg)) / 10000000)));
 
         SimpleStackDump(&STACK);
@@ -205,14 +207,25 @@ DEF_CMD (COS, 24, 1,
         int* arg = GetArg(&cpu, cmd, &arg_temp);
 
         // fprintf(stderr, "ARG: %f", ((float) (*arg)) / 10000000);
-        StackPush(&STACK, rintf((cosf(((float) (*arg)) / 10000000)) * 10000000));
+        S_PUSH(rintf((cosf(((float) (*arg)) / 10000000)) * 10000000));
         // fprintf(stderr, "\nCOS: %f\n", (cosf(((float) (*arg)) / 10000000)));
 
         SimpleStackDump(&STACK);
     })
 
-DEF_CMD(CLEAR, 25, 0,
+DEF_CMD(CLEAR_CONSOLE, 25, 0,
     {
         sleep(PRINT_RAM_DELAY);
         system("clear");
+    })
+
+DEF_CMD(CLEAR_RAM, 26, 0,
+    {
+        for (int i = 1; i <= RAM_SIZE; i++)
+            cpu.RAM[i] = RAM_POISON;
+    })
+
+DEF_CMD(SQUARE, 27, 0,
+    {
+        S_PUSH(sqrt(S_POP));
     })
