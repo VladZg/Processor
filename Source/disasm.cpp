@@ -18,9 +18,9 @@
 #undef FILENAME_OUTPUT
 #undef FILENAME_INPUT_DEFAULT
 
-const char  FILENAME_INPUT_DEFAULT[]  = "./Source_output.asm";
+const char  FILENAME_INPUT_DEFAULT[]  = "./Source.exe";
 const char* FILENAME_INPUT            = nullptr;
-const char  FILENAME_OUTPUT[]         = "./Source_output_disasmed.txt";
+const char  FILENAME_OUTPUT[]         = "./Source.dsm";
 
 void PrintArgs(char cmd, char* code, int* ip, FILE* file_out);
 const char* ConvertReg(int reg_code);

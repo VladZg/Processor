@@ -28,7 +28,7 @@ int RUSSIA = PrintRusFlag();
 #undef FILENAME_INPUT
 #undef FILENAME_INPUT_DEFAULT
 
-const char  FILENAME_INPUT_DEFAULT[]  = "./Source_output.asm";
+const char  FILENAME_INPUT_DEFAULT[]  = "./Source.exe";
 const char* FILENAME_INPUT            = nullptr;
 
 struct Cpu

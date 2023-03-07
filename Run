@@ -2,8 +2,8 @@ ASM = asm
 CPU = cpu
 DISASM = disasm
 
-ASM_TARGET = Source_output.asm
-DISASM_TARGET = Source_output_disasmed.txt
+ASM_TARGET = Source.exe
+DISASM_TARGET = Source.dsm
 
 ROOT_DIR = ./
 APP_DIR = ./App/
@@ -11,7 +11,7 @@ APP_DIR = ./App/
 all: $(ASM_TARGET) $(DISASM_TARGET) run
 
 $(ASM_TARGET) :
-	$(APP_DIR)$(ASM) ./Source.txt
+	$(APP_DIR)$(ASM) $(filename)
 
 $(DISASM_TARGET) :
 	$(APP_DIR)$(DISASM) ./$(ASM_TARGET)
@@ -20,4 +20,4 @@ run :
 	$(APP_DIR)$(CPU) ./$(ASM_TARGET)
 
 clean :
-	rm -f $(ROOT_DIR)$(ASM_TARGET) $(ROOT_DIR)$(DISASM_TARGET) ./Asm_listing.txt
+	rm -f $(ROOT_DIR)$(ASM_TARGET) $(ROOT_DIR)$(DISASM_TARGET) ./Asm_listing.lst

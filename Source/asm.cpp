@@ -15,10 +15,10 @@
 #undef  FILENAME_OUTPUT
 #undef  FILENAME_INPUT_DEFAULT
 
-const char  FILENAME_INPUT_DEFAULT[]  = "./Source_default.txt";
+const char  FILENAME_INPUT_DEFAULT[]  = "./AsmProgs/Source_default.asm";
 const char* FILENAME_INPUT            = nullptr;
-const char  FILENAME_OUTPUT[]         = "./Source_output.asm";
-const char  FILENAME_LISTING[]        = "./Asm_listing.txt";
+const char  FILENAME_OUTPUT[]         = "./Source.exe";
+const char  FILENAME_LISTING[]        = "./Source.lst";
 
 int    n_labels = 0;
 Label* labels = nullptr;
