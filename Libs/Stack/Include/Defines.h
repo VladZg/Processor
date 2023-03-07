@@ -1,9 +1,9 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
-#include "Config.h"
+#include "./Config.h"
 #include <stdlib.h>
-#include "Log.h"
+#include "./Log.h"
 
 # ifndef NDEBUG
 

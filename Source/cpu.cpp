@@ -1,18 +1,19 @@
-#include "Stack/Config.h"
+#include "../Libs/Stack/Include/Config.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
-#include "Constants.h"
-#include "Stack/Stack.h"
-#include "Description.h"
+#include "../Libs/Stack/Include/Stack.h"
+#include "../Libs/Onegin/Include/functions.h"
+#include "../Include/Constants.h"
+#include "../Include/Description.h"
 
 #define NDUMP
 // #define DELAYS_MODE
 
-#include "CpuGraphics.h"
-#include "TechInfo.h"
-#include "CheckFile.h"
+#include "../Include/CpuGraphics.h"
+#include "../Include/TechInfo.h"
+#include "../Include/CheckFile.h"
 
 #ifdef NDEBUG
 #undef ASSERT
@@ -365,7 +366,7 @@ int DoCpuCycle(const char* filename_input)
 
             switch(cmd & CMD_CODE_MASK)
             {
-                #include "Cmd.h"
+                #include "../Include/Cmd.h"
 
                 default:
                     CpuError(&cpu, file, SYNTAX_ERR_CODE, "  NO SUCH COMMAND WITH CODE %d\n"

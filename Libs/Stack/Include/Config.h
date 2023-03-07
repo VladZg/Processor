@@ -16,7 +16,7 @@
 
 #endif
 
-#include "Consts.h"
+#include "./Consts.h"
 
 typedef int Elem_t;
 

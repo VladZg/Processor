@@ -1,11 +1,11 @@
-#include "Stack/Config.h"
-#include "Constants.h"
+#include "../Libs/Stack/Include/Config.h"
 #include <stdio.h>
 #include <string.h>
 #include <cstdlib>
-#include "TechInfo.h"
-#include "CheckFile.h"
-#include "Description.h"
+#include "../Include/Constants.h"
+#include "../Include/TechInfo.h"
+#include "../Include/CheckFile.h"
+#include "../Include/Description.h"
 
 #define  ASSERT( condition )                                                \
 {                                                                           \
@@ -18,9 +18,9 @@
 #undef FILENAME_OUTPUT
 #undef FILENAME_INPUT_DEFAULT
 
-const char  FILENAME_INPUT_DEFAULT[]  = "Source_output.asm";
+const char  FILENAME_INPUT_DEFAULT[]  = "./Source_output.asm";
 const char* FILENAME_INPUT            = nullptr;
-const char  FILENAME_OUTPUT[]         = "Source_output_disasmed.txt";
+const char  FILENAME_OUTPUT[]         = "./Source_output_disasmed.txt";
 
 void PrintArgs(char cmd, char* code, int* ip, FILE* file_out);
 const char* ConvertReg(int reg_code);
@@ -111,7 +111,7 @@ int Decompile(const char* filename_input, const char* filename_output)
 
             switch(cmd & CMD_CODE_MASK)
             {
-                #include "Cmd.h"
+                #include "../Include/Cmd.h"
 
                 default:
                 {
@@ -165,7 +165,7 @@ const char* ConvertReg(int reg_code)
 {
     switch (reg_code)
     {
-        #include "Reg.h"
+        #include "../Include/Reg.h"
 
         default:
         {

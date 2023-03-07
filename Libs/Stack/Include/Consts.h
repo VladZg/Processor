@@ -1,7 +1,7 @@
 #ifndef CONSTS
 #define CONSTS_H
 
-#include "ColourConsts.h"
+#include "./ColourConsts.h"
 
 enum {
       STK_OK_STATUS        = 1,

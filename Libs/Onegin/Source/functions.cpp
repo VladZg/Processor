@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 // #define NDEBUG
-#include "defines.h"
+#include "../Include/defines.h"
 
 
 int size_of_file(FILE* file)                                  // узнать размер файла

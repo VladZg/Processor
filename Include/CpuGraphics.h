@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <cstring>
 #include <stdarg.h>
-#include "Stack/ColourConsts.h"
-#include "Constants.h"
-#include "Stack/Stack.h"
+#include "../Libs/Stack/Include/ColourConsts.h"
+#include "./Constants.h"
+#include "../Libs/Stack/Include/Stack.h"
 
 #ifndef  NDUMP
 

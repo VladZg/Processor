@@ -1,15 +1,15 @@
-#include "Constants.h"
-#include "Stack/Config.h"
-#include "Stack/ColourConsts.h"
+#include "../Include/Constants.h"
+#include "../Libs/Stack/Include/Config.h"
+#include "../Libs/Stack/Include/ColourConsts.h"
 #include <stdio.h>
 #include <string.h>
 #include <cstdlib>
 #include <stdarg.h>
-#include "Onegin/defines.h"
-#include "Onegin/functions.h"
-#include "TechInfo.h"
-#include "CheckFile.h"
-#include "Description.h"
+#include "../Libs/Onegin/Include/defines.h"
+#include "../Libs/Onegin/Include/functions.h"
+#include "../Include/TechInfo.h"
+#include "../Include/CheckFile.h"
+#include "../Include/Description.h"
 
 #undef  FILENAME_INPUT
 #undef  FILENAME_OUTPUT
@@ -127,7 +127,7 @@ int IsLabel(char* name)
 
 int IsRegister(char* str)
 {
-    #include "Reg.h"
+    #include "../Include/Reg.h"
 
     {
         // CompilationError(stderr, SYNTAX_ERR_CODE, "WRONG SYNTAX");
@@ -476,7 +476,7 @@ int Compile(const char* filename_input, const char* filename_output)
         // if (strcmp(cmd, "") == 0) {}
 
         else
-        #include "Cmd.h"
+        #include "../Include/Cmd.h"
 
         {
             char* arg = cmd;

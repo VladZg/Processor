@@ -7,28 +7,28 @@ CFLAGS = # -g -fsanitize=address
 
 ROOT_DIR = ./
 LIB_DIR = ./Libs/
-SRC_DIR = ./Src/
+SRC_DIR = ./Source/
 APP_DIR = ./App/
 
-ASM_SRC = 		./asm.cpp 					\
-				./Onegin/functions.cpp
-CPU_SRC = 		./cpu.cpp					\
-				./Stack/Stack.cpp 			\
-				./Stack/Log.cpp 			\
-				./Stack/HashCounters.cpp	\
-				./Onegin/functions.cpp
-DISASM_SRC = 	./disasm.cpp
+ASM_SRC = 		$(SRC_DIR)asm.cpp 						\
+				$(LIB_DIR)Onegin/Source/functions.cpp
+CPU_SRC = 		$(SRC_DIR)cpu.cpp						\
+				$(LIB_DIR)Stack/Source/Stack.cpp		\
+				$(LIB_DIR)Stack/Source/Log.cpp 			\
+				$(LIB_DIR)Stack/Source/HashCounters.cpp	\
+				$(LIB_DIR)Onegin/Source/functions.cpp
+DISASM_SRC = 	$(SRC_DIR)disasm.cpp
 
 all: $(ASM_TARGET) $(CPU_TARGET) $(DISASM_TARGET)
 
 $(ASM_TARGET) :
-	$(CC) $(CFLAGS) $(ASM_SRC) -o $(ROOT_DIR)$(ASM_TARGET)
+	$(CC) $(CFLAGS) $(ASM_SRC) -o $(APP_DIR)$(ASM_TARGET)
 
 $(DISASM_TARGET) :
-	$(CC) $(CFLAGS) $(DISASM_SRC) -o $(ROOT_DIR)$(DISASM_TARGET)
+	$(CC) $(CFLAGS) $(DISASM_SRC) -o $(APP_DIR)$(DISASM_TARGET)
 
 $(CPU_TARGET) :
-	$(CC) $(CFLAGS) $(CPU_SRC) -o $(ROOT_DIR)$(CPU_TARGET)
+	$(CC) $(CFLAGS) $(CPU_SRC) -o $(APP_DIR)$(CPU_TARGET)
 
 clean :
-	rm -f *.o $(ROOT_DIR)$(ASM_TARGET) $(ROOT_DIR)$(CPU_TARGET) $(ROOT_DIR)$(DISASM_TARGET)
+	rm -f *.o $(APP_DIR)$(ASM_TARGET) $(APP_DIR)$(CPU_TARGET) $(APP_DIR)$(DISASM_TARGET)

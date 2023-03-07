@@ -1,6 +1,6 @@
-#include "Config.h"
+#include "../Include/Config.h"
 #include <stdint.h>
-#include "Defines.h"
+#include "../Include/Defines.h"
 
 uint32_t MurHash(const void* obj, uint32_t len, uint32_t seed)
 {

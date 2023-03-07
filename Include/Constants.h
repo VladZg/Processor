@@ -12,7 +12,7 @@
 
 enum Comands      //автогенерация enuma команд
 {
-      #include "Cmd.h"
+      #include "./Cmd.h"
 };
 
 #undef DEF_DUMP
@@ -47,7 +47,7 @@ int START_REGS[7] = {0, 0, 0, 0, 0, 0, 0};
 
 enum RegistersInfo
 {
-      #include "Reg.h"
+      #include "./Reg.h"
 
       REGS_SIZE = 6,
 };

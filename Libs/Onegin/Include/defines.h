@@ -20,13 +20,13 @@
 
 #else
     #define ASSERT( condition ) {}
-    #define PRINT(  cmd ) {}
+    #define PRINT( cmd ) {}
 
 #endif
 
-#define FILENAME_INPUT_DEFAULT           "text_input.txt"
-#define FILENAME_OUTPUT_SORTED_DEFAULT   "text_output_sorted.txt"
-#define FILENAME_OUTPUT_ORIGINAL_DEFAULT "text_output_original.txt"
+#define FILENAME_INPUT_DEFAULT           "./text_input.txt"
+#define FILENAME_OUTPUT_SORTED_DEFAULT   "./text_output_sorted.txt"
+#define FILENAME_OUTPUT_ORIGINAL_DEFAULT "./text_output_original.txt"
 
 #ifndef FILENAME_INPUT
     #define FILENAME_INPUT FILENAME_INPUT_DEFAULT

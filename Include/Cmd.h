@@ -1,4 +1,4 @@
-#include "DSL.h"
+#include "./DSL.h"
 
 DEF_CMD (HLT,  0,  0,
     {

@@ -1,10 +1,10 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include "Config.h"
-#include "Log.h"
-#include "HashCounters.h"
-#include "Defines.h"
+#include "./Config.h"
+#include "./Log.h"
+#include "./HashCounters.h"
+#include "./Defines.h"
 
 struct Info
 {
