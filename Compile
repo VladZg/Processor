@@ -1,0 +1,34 @@
+ASM_TARGET = asm
+CPU_TARGET = cpu
+DISASM_TARGET = disasm
+
+CC = g++
+CFLAGS = # -g -fsanitize=address
+
+ROOT_DIR = ./
+LIB_DIR = ./Libs/
+SRC_DIR = ./Src/
+APP_DIR = ./App/
+
+ASM_SRC = 		./asm.cpp 					\
+				./Onegin/functions.cpp
+CPU_SRC = 		./cpu.cpp					\
+				./Stack/Stack.cpp 			\
+				./Stack/Log.cpp 			\
+				./Stack/HashCounters.cpp	\
+				./Onegin/functions.cpp
+DISASM_SRC = 	./disasm.cpp
+
+all: $(ASM_TARGET) $(CPU_TARGET) $(DISASM_TARGET)
+
+$(ASM_TARGET) :
+	$(CC) $(CFLAGS) $(ASM_SRC) -o $(ROOT_DIR)$(ASM_TARGET)
+
+$(DISASM_TARGET) :
+	$(CC) $(CFLAGS) $(DISASM_SRC) -o $(ROOT_DIR)$(DISASM_TARGET)
+
+$(CPU_TARGET) :
+	$(CC) $(CFLAGS) $(CPU_SRC) -o $(ROOT_DIR)$(CPU_TARGET)
+
+clean :
+	rm -f *.o $(ROOT_DIR)$(ASM_TARGET) $(ROOT_DIR)$(CPU_TARGET) $(ROOT_DIR)$(DISASM_TARGET)

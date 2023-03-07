@@ -1,0 +1,22 @@
+ASM = asm
+CPU = cpu
+DISASM = disasm
+
+ASM_TARGET = Source_output.asm
+DISASM_TARGET = Source_output_disasmed.txt
+
+ROOT_DIR = ./
+
+all: $(ASM_TARGET) $(DISASM_TARGET) run
+
+$(ASM_TARGET) :
+	$(ROOT_DIR)$(ASM) ./Source.txt
+
+$(DISASM_TARGET) :
+	$(ROOT_DIR)$(DISASM) $(ROOT_DIR)$(ASM_TARGET)
+
+run :
+	$(ROOT_DIR)$(CPU) $(ROOT_DIR)$(ASM_TARGET)
+
+clean :
+	rm -f $(ROOT_DIR)$(ASM_TARGET) $(ROOT_DIR)$(DISASM_TARGET) ./Asm_listing.txt

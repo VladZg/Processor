@@ -1,5 +1,7 @@
 /asm
 /main
+/main.cpp
+/make.cpp
 /make
 /disasm
 /Asm_listing.txt
