@@ -19,7 +19,10 @@ CPU_SRC = 		$(SRC_DIR)cpu.cpp						\
 				$(LIB_DIR)Onegin/Source/functions.cpp
 DISASM_SRC = 	$(SRC_DIR)disasm.cpp
 
-all: $(ASM_TARGET) $(CPU_TARGET) $(DISASM_TARGET)
+all: create_app_folder $(ASM_TARGET) $(CPU_TARGET) $(DISASM_TARGET)
+
+create_app_folder :
+	mkdir ./App
 
 $(ASM_TARGET) :
 	$(CC) $(CFLAGS) $(ASM_SRC) -o $(APP_DIR)$(ASM_TARGET)
