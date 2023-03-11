@@ -1,3 +1,4 @@
+RUS
 start
 Pin
 Pop rax

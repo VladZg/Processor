@@ -64,7 +64,7 @@ enum RAMInfo
 
 enum LabelsInfo
 {
-      LBLS_MAXSIZE     = 10,
+      LBLS_MAXSIZE     = 100,
       LBLNAME_MAXSIZE  = 20,
 };
 

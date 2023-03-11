@@ -69,6 +69,8 @@ int main(const int argc, const char** argv)
 
     Compile(FILENAME_INPUT, FILENAME_OUTPUT);
 
+    // PrintLabels();
+
     LablesCleaner(labels);
     free(labels);
 

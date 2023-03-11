@@ -34,4 +34,4 @@ $(CPU_TARGET) :
 	$(CC) $(CFLAGS) $(CPU_SRC) -o $(APP_DIR)$(CPU_TARGET)
 
 clean :
-	rm -f *.o $(APP_DIR)$(ASM_TARGET) $(APP_DIR)$(CPU_TARGET) $(APP_DIR)$(DISASM_TARGET)
+	rm -R -f *.o $(APP_DIR)
